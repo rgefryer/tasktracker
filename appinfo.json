@@ -1,0 +1,36 @@
+{
+    "appKeys": {},
+    "capabilities": [
+        ""
+    ],
+    "companyName": "richard@richardfryer.com",
+    "longName": "Tracker",
+    "projectType": "native",
+    "resources": {
+        "media": [
+            {
+                "file": "images/menu_tube.png",
+                "name": "MENU_ICON_TUBE",
+                "type": "png"
+            },
+            {
+                "file": "images/menu_thanks.png",
+                "name": "MENU_ICON_THANKS",
+                "type": "png"
+            },
+            {
+                "file": "images/menu_bus.png",
+                "name": "MENU_ICON_BUS",
+                "type": "png"
+            }
+        ]
+    },
+    "sdkVersion": "2",
+    "shortName": "Tracker",
+    "uuid": "6f85ce67-583e-42d3-b119-6abcb5a6994a",
+    "versionCode": 1,
+    "versionLabel": "1.0",
+    "watchapp": {
+        "watchface": false
+    }
+}
