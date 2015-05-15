@@ -2,12 +2,10 @@
 #include <testmenu.h>
 
 /*
-Provide (and use) functions to decode item name into 
-constituent parts.
 Don't use "..." to indicate a submenu - use an icon (>) instead.
 */
 
-  
+
 static uint16_t menu_get_num_sections_callback(MenuLayer *me, void *data);
 static uint16_t menu_get_num_rows_callback(MenuLayer *me, uint16_t section_index, void *data);
 static int16_t menu_get_header_height_callback(MenuLayer *me, uint16_t section_index, void *data);
@@ -21,7 +19,7 @@ void start_submenu();
 //#define ICON_THANKS 0
 //#define ICON_TUBE 1
 //#define ICON_BUS 2
-  
+
 //static GBitmap *icons[NUM_ICONS];
 
 static is_menu_cb_t is_menu_callback;
@@ -38,34 +36,65 @@ static TextLayer *s_textlayer_1_array[MAX_MENU_DEPTH];
 static char s_menu_array[MAX_MENU_DEPTH][20];
 static int s_menu_stack_pos = 0;  // Next slot to push
 
+/*
+  Take an integer, and return a static buffer containing
+  a string representation.
+*/
+char *itoa(int num)
+{
+  // We don't support negative numbers
+  if (num < 0)
+  {
+    return "NaN";
+  }
+
+  // Write the digits to a working array, in reverse order.
+  int pos = 0;
+  char array[20];
+  while (1)
+  {
+    // Write the least significant digit into the array
+    array[pos++] = num % 10;
+    num /= 10;
+
+    // Exit if there are no more digits
+    if (num == 0)
+      break;
+  }
+
+  // Write the array into the (static) output buffer, correcting
+  // the order.
+  int ii = 0;
+  static char output[20];
+  while (--pos >= 0)
+  {
+    output[ii++] = array[pos] + '0';
+  }
+
+  // Finally, null-terminate the string
+  output[ii] = 0;
+
+  return output;
+}
+
+
+/*
+  Generate an item name by appending the number passed onto the
+  string in s_prefix.
+
+  Return a static buffer - this only remains valid until the
+  next call to the function.
+*/
 char *item_name(int num)
 {
   static char buff[20] = {};
+
   num += 1;  // The menu numbering is 1-based
-  int i = 0, temp_num = num, length = 0;
-  
-  char *string = buff;
-  if(num >= 0) {
-    // count how many characters in the number
-    while(temp_num) {
-      temp_num /= 10;
-      length++;
-    }
-    // assign the number to the buffer starting at the end of the 
-    // number and going to the begining since we are doing the
-    // integer to character conversion on the last number in the
-    // sequence
-    strcpy(buff, s_menu);
-    int offset = strlen(s_menu);
-    for(i = 0; i < length; i++) {
-      buff[offset + (length-1) - i] = '0' + (num % 10);
-      num /= 10;
-    }
-    buff[offset + i] = '\0'; // can't forget the null byte to properly end our string
-  }
-  else
-    return "Unsupported Number";
-  return string;
+
+  strcpy(buff, s_menu);
+  strcat(buff, itoa(num));
+
+  return buff;
 }
 
 // BEGIN AUTO-GENERATED UI CODE; DO NOT MODIFY
@@ -77,12 +106,12 @@ static void initialise_ui(void) {
   s_window = window_create();
   window_set_background_color(s_window, GColorBlack);
   window_set_fullscreen(s_window, true);
-  
+
   // s_menulayer_1
   s_menulayer_1 = menu_layer_create(GRect(1, 21, 144, 146));
   menu_layer_set_click_config_onto_window(s_menulayer_1, s_window);
   layer_add_child(window_get_root_layer(s_window), (Layer *)s_menulayer_1);
-  
+
   // s_textlayer_1
   s_textlayer_1 = text_layer_create(GRect(2, 0, 143, 19));
   text_layer_set_background_color(s_textlayer_1, GColorBlack);
@@ -106,7 +135,7 @@ void push_menu() {
   s_menulayer_1_array[s_menu_stack_pos] = s_menulayer_1;
   s_textlayer_1_array[s_menu_stack_pos] = s_textlayer_1;
   strcpy(s_menu_array[s_menu_stack_pos], s_menu);
-  
+
   s_menu_stack_pos++;
 }
 
@@ -115,9 +144,9 @@ void pop_menu() {
     s_window = NULL;  // Flag that we've fully rewound
     return;
   }
-  
+
   s_menu_stack_pos--;
- 
+
   if (s_menu_stack_pos != 0) {
     s_window = s_window_array[s_menu_stack_pos-1];
     s_menulayer_1 = s_menulayer_1_array[s_menu_stack_pos-1];
@@ -147,12 +176,12 @@ static void handle_window_load(Window* me) {
 }
 
 static void handle_window_unload(Window* window) {
-  destroy_ui();  
+  destroy_ui();
   //gbitmap_destroy(icons[ICON_THANKS]);
   //gbitmap_destroy(icons[ICON_BUS]);
   //gbitmap_destroy(icons[ICON_TUBE]);
   pop_menu();
-  
+
   // If we've selected, made sure that all windows
   // are removed.
   if (s_selected && s_window) {
@@ -181,45 +210,40 @@ void menu_draw_header_callback(GContext* ctx, const Layer *cell_layer, uint16_t 
 }
 
 void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuIndex *cell_index, void *data) {
-  
+
   graphics_context_set_text_color(ctx, GColorWhite);
   //if (icon) {
     //graphics_draw_bitmap_in_rect(ctx, icon, GRect(4, 4, 24, 28));
   //}
-    
-  // Query the text to display, and add "..." if it's a 
+
+  // Query the text to display, and add "..." if it's a
   // submenu.
   char *item_id = item_name(cell_index->row);
   char *text = item_text_callback(item_id);
-  char *text_buff = NULL;
+  char item[MAX_MENU_ITEM_LEN+4] = {};
   if (is_menu_callback(item_id)) {
-    text_buff = malloc(strlen(text) + 4);
-    strcpy(text_buff, text);
-    strcpy(text_buff + strlen(text), "...");
-    text = text_buff;
-  }
-  
-  graphics_draw_text(ctx, 
+    strcpy(item, '> ');
+  else
+    strcpy(item, '   ');
+  strncat(item, text, MAX_MENU_ITEM_LEN+3)
+
+  graphics_draw_text(ctx,
                      text,
-                     fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD), 
-                     GRect(4, 2, 136, 18), 
-                     GTextOverflowModeFill, 
+                     fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD),
+                     GRect(4, 2, 136, 18),
+                     GTextOverflowModeFill,
                      GTextAlignmentLeft,
                      NULL);
-  
-  if (text_buff != NULL) {
-    free(text_buff);
-  }
 }
 
 void menu_select_click_callback(MenuLayer *menu_layer, MenuIndex *cell_index, void *callback_context) {
-  
+
   char *item_id = item_name(cell_index->row);
   if (is_menu_callback(item_id)) {
     // User has selected a submenu.  Start up a new menu.
     char *new_name = item_name(cell_index->row);
     strcpy(s_menu, new_name);
-    strcpy(s_menu + strlen(new_name), "/");
+    strcat(s_menu, "/");
     start_submenu();
   }
   else {
@@ -229,7 +253,7 @@ void menu_select_click_callback(MenuLayer *menu_layer, MenuIndex *cell_index, vo
     hide_testmenu();
     select_callback(result);
   }
-  
+
 }
 
 void start_submenu() {
@@ -239,35 +263,41 @@ void start_submenu() {
     .unload = handle_window_unload,
   });
   text_layer_set_text(s_textlayer_1, item_text_callback(s_menu));
-  window_stack_push(s_window, true); 
+  window_stack_push(s_window, true);
 }
 
 
-int menu_index(char **spec) {
+/*
+  Return the next compononent in the menu spec, or zero if
+  there isn't one.
+
+  The pointer reference passed in is updated ready for the next call.
+*/
+int next_menu_part(char **spec) {
   if (*spec == NULL) {
     return 0;
   }
-  
+
   if (**spec == '/') {
     (*spec) ++;
   }
-    
+
   int val = 0;
   while ((**spec != '/') && (**spec != 0)) {
     val *= 10;
     val += **spec - '0';
     *spec += 1;
   }
-    
+
   return val;
 }
 
-void show_testmenu(select_cb_t select_cb, 
-                   num_items_cb_t num_items_cb, 
-                   item_text_cb_t item_text_cb, 
+void show_testmenu(select_cb_t select_cb,
+                   num_items_cb_t num_items_cb,
+                   item_text_cb_t item_text_cb,
                    is_menu_cb_t is_menu_cb,
                    char *selection) {
-  
+
   is_menu_callback = is_menu_cb;
   num_items_callback = num_items_cb;
   item_text_callback = item_text_cb;
@@ -276,18 +306,18 @@ void show_testmenu(select_cb_t select_cb,
   s_selected = false;
 
   start_submenu();
-  
+
   // While there is a selected item, we select and create menus
   char *buf_pos = selection;
-  int index = menu_index(&buf_pos);
+  int index = next_menu_part(&buf_pos);
   while (index != 0) {
     MenuIndex mi = (MenuIndex){
       .section = 0,
       .row = index - 1
     };
     menu_layer_set_selected_index(s_menulayer_1, mi, MenuRowAlignCenter, false);
-    int next_index = menu_index(&buf_pos);
-    
+    int next_index = next_menu_part(&buf_pos);
+
     if (next_index != 0) {
       // Load submenu for this index
       char *item_id = item_name(index-1);
