@@ -221,14 +221,14 @@ void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuIndex *c
   char *item_id = item_name(cell_index->row);
   char *text = item_text_callback(item_id);
   char item[MAX_MENU_ITEM_LEN+4] = {};
-  if (is_menu_callback(item_id)) {
-    strcpy(item, '> ');
+  if (is_menu_callback(item_id)) 
+    strcpy(item, "> ");
   else
-    strcpy(item, '   ');
-  strncat(item, text, MAX_MENU_ITEM_LEN+3)
+    strcpy(item, "   ");
+  strncat(item, text, MAX_MENU_ITEM_LEN);
 
   graphics_draw_text(ctx,
-                     text,
+                     item,
                      fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD),
                      GRect(4, 2, 136, 18),
                      GTextOverflowModeFill,
