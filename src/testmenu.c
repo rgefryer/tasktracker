@@ -1,11 +1,6 @@
 #include <pebble.h>
 #include <testmenu.h>
 
-/*
-Don't use "..." to indicate a submenu - use an icon (>) instead.
-*/
-
-
 static uint16_t menu_get_num_sections_callback(MenuLayer *me, void *data);
 static uint16_t menu_get_num_rows_callback(MenuLayer *me, uint16_t section_index, void *data);
 static int16_t menu_get_header_height_callback(MenuLayer *me, uint16_t section_index, void *data);
@@ -26,7 +21,7 @@ static is_menu_cb_t is_menu_callback;
 static num_items_cb_t num_items_callback;
 static item_text_cb_t item_text_callback;
 static select_cb_t select_callback;
-static char s_menu[20];
+static char s_menu[20];  // Current menu ID, eg "/" or "/1/".
 static bool s_selected;
 
 #define MAX_MENU_DEPTH 10
@@ -36,63 +31,63 @@ static TextLayer *s_textlayer_1_array[MAX_MENU_DEPTH];
 static char s_menu_array[MAX_MENU_DEPTH][20];
 static int s_menu_stack_pos = 0;  // Next slot to push
 
+
 /*
-  Take an integer, and return a static buffer containing
-  a string representation.
+  Deconstruct a menu ID into an array of integers.
 */
-char *itoa(int num)
+int *menu_parts(char *id) {
+  static int parts[MAX_MENU_DEPTH];
+  char part_str[5];
+
+  int part = 0;
+  while (*id != '\0') {
+    if (*id != '/') {
+      char *string_end = id + 1;
+      int string_len = 1;
+      while (*string_end != '\0' && *string_end != '/') {
+        string_end++;
+        string_len++;
+      }
+      strncpy(part_str, *id, string_len);
+      parts[part++] = atoi(part_str);
+      id = string_end;
+    }
+  }
+
+  parts[part] = 0;
+  return parts;
+}
+
+// Number of parts in a deconstructed menu ID
+int menu_parts_count(int *parts)
 {
-  // We don't support negative numbers
-  if (num < 0)
-  {
-    return "NaN";
+  int count = 0;
+  int part = 0;
+
+  while (parts[part++] != 0) {
+    count++;
   }
 
-  // Write the digits to a working array, in reverse order.
-  int pos = 0;
-  char array[20];
-  while (1)
-  {
-    // Write the least significant digit into the array
-    array[pos++] = num % 10;
-    num /= 10;
-
-    // Exit if there are no more digits
-    if (num == 0)
-      break;
-  }
-
-  // Write the array into the (static) output buffer, correcting
-  // the order.
-  int ii = 0;
-  static char output[20];
-  while (--pos >= 0)
-  {
-    output[ii++] = array[pos] + '0';
-  }
-
-  // Finally, null-terminate the string
-  output[ii] = 0;
-
-  return output;
+  return count;
 }
 
 
 /*
-  Generate an item name by appending the number passed onto the
+  Generate an item id by appending the number passed onto the
   string in s_prefix.
 
   Return a static buffer - this only remains valid until the
   next call to the function.
 */
-char *item_name(int num)
+char *create_item_id(int num)
 {
   static char buff[20] = {};
 
   num += 1;  // The menu numbering is 1-based
 
+  int menu_len = strlen(s_menu);
   strcpy(buff, s_menu);
-  strcat(buff, itoa(num));
+  snprintf(buff + menu_len, 20 - menu_len, "%u", num);
 
   return buff;
 }
@@ -218,10 +213,10 @@ void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuIndex *c
 
   // Query the text to display, and add "..." if it's a
   // submenu.
-  char *item_id = item_name(cell_index->row);
+  char *item_id = create_item_id(cell_index->row);
   char *text = item_text_callback(item_id);
   char item[MAX_MENU_ITEM_LEN+4] = {};
-  if (is_menu_callback(item_id)) 
+  if (is_menu_callback(item_id))
     strcpy(item, "> ");
   else
     strcpy(item, "   ");
@@ -238,10 +233,10 @@ void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuIndex *c
 
 void menu_select_click_callback(MenuLayer *menu_layer, MenuIndex *cell_index, void *callback_context) {
 
-  char *item_id = item_name(cell_index->row);
+  char *item_id = create_item_id(cell_index->row);
   if (is_menu_callback(item_id)) {
     // User has selected a submenu.  Start up a new menu.
-    char *new_name = item_name(cell_index->row);
+    char *new_name = create_item_id(cell_index->row);
     strcpy(s_menu, new_name);
     strcat(s_menu, "/");
     start_submenu();
@@ -249,7 +244,7 @@ void menu_select_click_callback(MenuLayer *menu_layer, MenuIndex *cell_index, vo
   else {
     // Just an item.  Tidy up the menu(s) and return it to the caller.
     s_selected = true;
-    char *result = item_name(cell_index->row);
+    char *result = create_item_id(cell_index->row);
     hide_testmenu();
     select_callback(result);
   }
@@ -320,9 +315,9 @@ void show_testmenu(select_cb_t select_cb,
 
     if (next_index != 0) {
       // Load submenu for this index
-      char *item_id = item_name(index-1);
+      char *item_id = create_item_id(index-1);
       if (is_menu_callback(item_id)) {
-        char *new_name = item_name(index-1);
+        char *new_name = create_item_id(index-1);
         strcpy(s_menu, new_name);
         strcpy(s_menu + strlen(new_name), "/");
         start_submenu();

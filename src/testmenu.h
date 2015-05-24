@@ -8,9 +8,9 @@ typedef uint16_t (*num_items_cb_t)(char *name);
 typedef char * (*item_text_cb_t)(char *name);
 typedef void (*select_cb_t)(char *result);
 
-// Return the next part of the menu spec
-int next_menu_part(char **spec);
-
+// Return an array of parts from a decoded menu ID
+int *menu_parts(char *id);
+int menu_parts_count(int *parts);
 
 // Show the menu
 void show_testmenu(select_cb_t select_cb,
