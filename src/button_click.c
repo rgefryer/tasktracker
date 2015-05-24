@@ -15,6 +15,7 @@ static TextLayer *text_layer;
 // Expect item names like /1 & /3/4
 static bool task_cb_is_menu(char *name) {
   // All single item paths are menus.
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "task_cb_is_menu");
   if (strlen(name) <= 3)
     return true;
   else
@@ -27,9 +28,9 @@ static bool task_cb_is_menu(char *name) {
 static uint16_t task_cb_num_items(char *name) {
 
   // Deconstruct the menu ID
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "task_cb_num_items(%s)", name);
   int *parts = menu_parts(name);
   int num_parts = menu_parts_count(parts);
-
 
   // Root menu contains the number of labels, plus
   // 1 (for the "most recent" menu).
@@ -38,13 +39,14 @@ static uint16_t task_cb_num_items(char *name) {
     return 1 + num_labels();
   }
 
-
   // Menu 1 is the most recent tasks.  This has a
   // fixed size of MAX_RECENT_TASKS, unless there
   // are not that many tasks defined.
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "1st menu part is %d", parts[0]);
   if (parts[0] == 1) {
 
-    int task_count = num_tasks();
+    uint8_t *tasks = ordered_tasks(0);
+    int task_count = num_ids(tasks);
     if (task_count < MAX_RECENT_TASKS)
       return task_count;
     else
@@ -66,35 +68,48 @@ static uint16_t task_cb_num_items(char *name) {
 static char *task_cb_item_text(char *name) {
 
   // Deconstruct the menu ID
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "task_cb_item_text(%s)", name);
   int *parts = menu_parts(name);
   int num_parts = menu_parts_count(parts);
 
   // It's a menu if the ID ends with a '/'
   bool is_menu = (name[strlen(name)-1] == '/');
 
-  if (num_parts == 0)
-    return "Categories";
+  if (num_parts == 0) {
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "task_cb_item_text: return Categories");
+    return "Categories";  
+  }
 
   if ((num_parts == 1) && (parts[0] == 1)) {
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "task_cb_item_text: return Recent");
     return "Recent";
   }
 
   // Get the label ID
   uint8_t *labels = ordered_labels();
   uint8_t label_id = labels[parts[0]-2];
-
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "task_cb_item_text: Translate menu %d to label ID %d", parts[0], label_id);
+   
+  char *rc;
   if (num_parts == 1) {
-    return label_name(label_id);
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "task_cb_item_text: Get label name for label ID %d", label_id);
+    rc = label_name(label_id);
   }
-
-  uint8_t *tasks = ordered_tasks(label_id);
-  uint8_t task_id = tasks(parts[1] - 1);
-  return task_name(label_id);
+  else {
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "task_cb_item_text: Get task name");
+    uint8_t *tasks = ordered_tasks(label_id);
+    uint8_t task_id = tasks[parts[1] - 1];
+    rc = task_name(task_id);
+  }
+ 
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "task_cb_item_text: return %s", rc);
+  return rc;
 }
 
 // Callback to handle a menu selection
 // Expect item names like /1 & /3/4
 static void task_cb_select(char *result) {
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "task_cb_select");
   // Display the selected menu item in the text layer
   text_layer_set_text(text_layer, result);
 }
@@ -208,29 +223,34 @@ static void cb_select(char *result) {
 }
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "select_click_handler");
   text_layer_set_text(text_layer, "Select");
-  show_testmenu(task_cb_select,
-                task_cb_num_items,
-                task_cb_item_text,
-                task_cb_is_menu,
+  show_testmenu(cb_select,
+                cb_num_items,
+                cb_item_text,
+                cb_is_menu,
                 "/1/1");
 }
 
 static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "up_click_handler");
   text_layer_set_text(text_layer, "Up");
 }
 
 static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "down_click_handler");
   text_layer_set_text(text_layer, "Down");
 }
 
 static void click_config_provider(void *context) {
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "click_config_provider");
   window_single_click_subscribe(BUTTON_ID_SELECT, select_click_handler);
   window_single_click_subscribe(BUTTON_ID_UP, up_click_handler);
   window_single_click_subscribe(BUTTON_ID_DOWN, down_click_handler);
 }
 
 static void window_load(Window *window) {
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "window_load");
   Layer *window_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(window_layer);
 
@@ -241,10 +261,12 @@ static void window_load(Window *window) {
 }
 
 static void window_unload(Window *window) {
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "window_unload");
   text_layer_destroy(text_layer);
 }
 
 static void init(void) {
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "init");
   data_load();
   window = window_create();
   window_set_click_config_provider(window, click_config_provider);
@@ -257,11 +279,13 @@ static void init(void) {
 }
 
 static void deinit(void) {
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "deinit");
   data_save();
   window_destroy(window);
 }
 
 int main(void) {
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "main");
   init();
   app_event_loop();
   deinit();

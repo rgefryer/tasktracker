@@ -81,6 +81,7 @@ char s_link_data[] = {
 
 
 void bitfield_set(char *bitfield, int bit) {
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "bitfield_set");
   int byte = bit / 8;
   bit = bit % 8;
   char mask = 0x01 << bit;
@@ -89,6 +90,7 @@ void bitfield_set(char *bitfield, int bit) {
 }
 
 bool bitfield_get(char *bitfield, int bit) {
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "bitfield_get");
   int byte = bit / 8;
   bit = bit % 8;
   char mask = 0x01 << bit;
@@ -104,31 +106,39 @@ bool bitfield_get(char *bitfield, int bit) {
 // Return the number of labels defined
 int num_labels(void)
 {
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "num_labels");
   int label_count = 0;
+  int ix;
   for (ix = 1; ix <= NUM_LABELS; ix++)
     if (g_label_names[ix] != NULL)
       label_count++;
 
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "Returning %d", label_count);
   return label_count;
 }
 
 // Return the number of tasks defined
 int num_tasks(void)
 {
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "num_tasks");
   int task_count = 0;
+  int ix;
   for (ix = 1; ix <= NUM_TASKS; ix++)
     if (g_task_names[ix] != NULL)
       task_count++;
 
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "Returning %d", task_count);
   return task_count;
 }
 
 // Return the task IDs in a label (ordered by most recently used)
 // If label is 0, don't filter by label.
 uint8_t *ordered_tasks(uint8_t label) {
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "ordered_tasks(%d)", label);
   static uint8_t tasks[NUM_TASKS + 1];
 
   int task_count = 0;
+  int ix;
   for (ix = 1; ix <= NUM_TASKS; ix++) {
     if (g_task_names[ix] != NULL) {
       if (label == 0) {
@@ -137,45 +147,54 @@ uint8_t *ordered_tasks(uint8_t label) {
       else {
         if (bitfield_get(g_label_task_links[label], ix)) {
           tasks[task_count++] = ix;
+          APP_LOG(APP_LOG_LEVEL_DEBUG, "Task %d has this label", ix);
         }
+        else
+          APP_LOG(APP_LOG_LEVEL_DEBUG, "Task %d doesn't match", ix);          
       }
     }
   }
 
   tasks[task_count] = 0;
-
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "ordered_tasks: returning %d tasks", task_count); 
   return tasks;
 }
 
 // Return the labels (ordered by most recently used)
 uint8_t *ordered_labels() {
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "ordered_labels");
   static uint8_t labels[NUM_LABELS + 1];
 
   int label_count = 0;
+  int ix;
   for (ix = 1; ix <= NUM_LABELS; ix++)
     if (g_label_names[ix] != NULL)
       labels[label_count++] = ix;
 
   labels[label_count] = 0;
-
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "Returning %d labels", label_count);
   return labels;
 }
 
 // Return the number of items in a 0-terminated
 // array of IDs.
 uint16_t num_ids(uint8_t *ids) {
-  pos = 0;
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "num_ids");
+  int pos = 0;
   while (ids[pos] != 0)
     pos++;
 
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "Returning %d", pos);  
   return pos;
 }
 
 // Return the task/label name corresponding to an ID
 char *label_name(uint8_t id) {
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "label_name %d -> %s", id, g_label_names[id]);
   return g_label_names[id];
 }
 char *task_name(uint8_t id) {
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "task_name %d -> %s", id, g_task_names[id]);
   return g_task_names[id];
 }
 
@@ -183,6 +202,7 @@ char *task_name(uint8_t id) {
 #define ARRAY_SIZE(X) (sizeof (X) / sizeof (X)[0])
 void data_load()
 {
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "data_load");
   g_sid_offset = 0;
   if (persist_exists(SID_OFFSET_ID)) {
     g_sid_offset = persist_read_int(SID_OFFSET_ID);
@@ -283,6 +303,7 @@ void data_load()
 // false on failure.
 bool data_save()
 {
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "data_save");
   // Toggle the data version to write
   int old_sid_offset = g_sid_offset;
   if (g_sid_offset == SID_OFFSET) {

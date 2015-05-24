@@ -36,6 +36,7 @@ static int s_menu_stack_pos = 0;  // Next slot to push
   Deconstruct a menu ID into an array of integers.
 */
 int *menu_parts(char *id) {
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "menu_parts(%s)", id);
   static int parts[MAX_MENU_DEPTH];
   char part_str[5];
 
@@ -48,12 +49,15 @@ int *menu_parts(char *id) {
         string_end++;
         string_len++;
       }
-      strncpy(part_str, *id, string_len);
+      strncpy(part_str, id, string_len);
       parts[part++] = atoi(part_str);
       id = string_end;
     }
+    else
+      id++;
   }
 
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "menu_parts: Returning %d part(s)", part);
   parts[part] = 0;
   return parts;
 }
@@ -61,6 +65,7 @@ int *menu_parts(char *id) {
 // Number of parts in a deconstructed menu ID
 int menu_parts_count(int *parts)
 {
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "menu_parts_count");
   int count = 0;
   int part = 0;
 
@@ -81,32 +86,32 @@ int menu_parts_count(int *parts)
 */
 char *create_item_id(int num)
 {
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "create_item_id(%d)", num);
   static char buff[20] = {};
 
   num += 1;  // The menu numbering is 1-based
 
-  int menu_len = strlen(s_menu);
-  strcpy(buff, s_menu);
-  snprintf(buff + menu_len, 20 - menu_len, "%u", num);
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "create_item_id: appending to %s", s_menu);
+  snprintf(buff, 20, "%s%u", s_menu, num);
 
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "create_item_id: returning %s", buff);
   return buff;
 }
 
 // BEGIN AUTO-GENERATED UI CODE; DO NOT MODIFY
-static Window *s_window = NULL;
+static Window *s_window;
 static MenuLayer *s_menulayer_1;
 static TextLayer *s_textlayer_1;
 
 static void initialise_ui(void) {
   s_window = window_create();
-  window_set_background_color(s_window, GColorBlack);
-  window_set_fullscreen(s_window, true);
-
+  window_set_fullscreen(s_window, false);
+  
   // s_menulayer_1
   s_menulayer_1 = menu_layer_create(GRect(1, 21, 144, 146));
   menu_layer_set_click_config_onto_window(s_menulayer_1, s_window);
   layer_add_child(window_get_root_layer(s_window), (Layer *)s_menulayer_1);
-
+  
   // s_textlayer_1
   s_textlayer_1 = text_layer_create(GRect(2, 0, 143, 19));
   text_layer_set_background_color(s_textlayer_1, GColorBlack);
@@ -206,21 +211,20 @@ void menu_draw_header_callback(GContext* ctx, const Layer *cell_layer, uint16_t 
 
 void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuIndex *cell_index, void *data) {
 
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "menu_draw_row_callback: row %d in menu %s", cell_index->row, s_menu);
+  
   graphics_context_set_text_color(ctx, GColorWhite);
   //if (icon) {
     //graphics_draw_bitmap_in_rect(ctx, icon, GRect(4, 4, 24, 28));
   //}
 
-  // Query the text to display, and add "..." if it's a
+  // Query the text to display, and prefix with ">" for a
   // submenu.
   char *item_id = create_item_id(cell_index->row);
   char *text = item_text_callback(item_id);
+  char *prefix = (is_menu_callback(item_id)) ? "> ": "   ";
   char item[MAX_MENU_ITEM_LEN+4] = {};
-  if (is_menu_callback(item_id))
-    strcpy(item, "> ");
-  else
-    strcpy(item, "   ");
-  strncat(item, text, MAX_MENU_ITEM_LEN);
+  snprintf(item, MAX_MENU_ITEM_LEN+4, "%s%s", prefix, text);
 
   graphics_draw_text(ctx,
                      item,
@@ -293,6 +297,7 @@ void show_testmenu(select_cb_t select_cb,
                    is_menu_cb_t is_menu_cb,
                    char *selection) {
 
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "show_testmenu");
   is_menu_callback = is_menu_cb;
   num_items_callback = num_items_cb;
   item_text_callback = item_text_cb;
@@ -328,5 +333,6 @@ void show_testmenu(select_cb_t select_cb,
 }
 
 void hide_testmenu(void) {
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "hide_testmenu");
   window_stack_remove(s_window, true);
 }
