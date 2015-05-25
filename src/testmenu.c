@@ -38,8 +38,7 @@ static int s_menu_stack_pos = 0;  // Next slot to push
 */
 int *menu_parts(char *id, uint8_t *parts) {
   APP_LOG(APP_LOG_LEVEL_DEBUG, "menu_parts(%s) {", id);
-  static int parts[MAX_MENU_DEPTH];
-  char part_str[5];
+  char part_str[MAX_MENU_PART_DIGITS+1];
 
   uint8_t part = 0;
   while (*id != '\0') {
