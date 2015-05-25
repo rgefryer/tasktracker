@@ -29,8 +29,8 @@ static uint16_t task_cb_num_items(char *name) {
 
   // Deconstruct the menu ID
   APP_LOG(APP_LOG_LEVEL_DEBUG, "task_cb_num_items(%s)", name);
-  int *parts = menu_parts(name);
-  int num_parts = menu_parts_count(parts);
+  uint8_t parts[MAX_MENU_DEPTH];
+  int num_parts = menu_parts(name, parts);
 
   // Root menu contains the number of labels, plus
   // 1 (for the "most recent" menu).
@@ -69,39 +69,45 @@ static char *task_cb_item_text(char *name) {
 
   // Deconstruct the menu ID
   APP_LOG(APP_LOG_LEVEL_DEBUG, "task_cb_item_text(%s)", name);
-  int *parts = menu_parts(name);
-  int num_parts = menu_parts_count(parts);
+  uint8_t parts[MAX_MENU_DEPTH];
+  int num_parts = menu_parts(name, parts);
+  char *rc = "Unknown";
 
   // It's a menu if the ID ends with a '/'
   bool is_menu = (name[strlen(name)-1] == '/');
 
   if (num_parts == 0) {
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "task_cb_item_text: return Categories");
-    return "Categories";  
+    rc = "Categories";
   }
 
-  if ((num_parts == 1) && (parts[0] == 1)) {
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "task_cb_item_text: return Recent");
-    return "Recent";
+  else if ((num_parts == 1) && (parts[0] == 1)) {
+    rc = "Recent";
   }
 
-  // Get the label ID
-  uint8_t *labels = ordered_labels();
-  uint8_t label_id = labels[parts[0]-2];
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "task_cb_item_text: Translate menu %d to label ID %d", parts[0], label_id);
-   
-  char *rc;
-  if (num_parts == 1) {
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "task_cb_item_text: Get label name for label ID %d", label_id);
-    rc = label_name(label_id);
-  }
   else {
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "task_cb_item_text: Get task name");
-    uint8_t *tasks = ordered_tasks(label_id);
-    uint8_t task_id = tasks[parts[1] - 1];
-    rc = task_name(task_id);
+    // Get the label ID
+    uint8_t *labels = ordered_labels();
+    uint8_t label_id = labels[parts[0]-2];
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "task_cb_item_text: Translate menu %d to label ID %d", parts[0], label_id);
+
+    if (num_parts == 1) {
+      APP_LOG(APP_LOG_LEVEL_DEBUG, "task_cb_item_text: Get label name for label ID %d", label_id);
+      rc = label_name(label_id);
+    }
+    else {
+      APP_LOG(APP_LOG_LEVEL_DEBUG, "task_cb_item_text: Get task name");
+      uint8_t *tasks = ordered_tasks(label_id);
+      uint8_t task_id = tasks[parts[1] - 1];
+      rc = task_name(task_id);
+    }
   }
- 
+
+  if (strlen(rc) >= MAX_MENU_ITEM_LEN)
+  {
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "task_cb_item_text: dumping %s: too long", rc);
+    rc = "Too long";
+  }
+
   APP_LOG(APP_LOG_LEVEL_DEBUG, "task_cb_item_text: return %s", rc);
   return rc;
 }

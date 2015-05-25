@@ -150,13 +150,13 @@ uint8_t *ordered_tasks(uint8_t label) {
           APP_LOG(APP_LOG_LEVEL_DEBUG, "Task %d has this label", ix);
         }
         else
-          APP_LOG(APP_LOG_LEVEL_DEBUG, "Task %d doesn't match", ix);          
+          APP_LOG(APP_LOG_LEVEL_DEBUG, "Task %d doesn't match", ix);
       }
     }
   }
 
   tasks[task_count] = 0;
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "ordered_tasks: returning %d tasks", task_count); 
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "ordered_tasks: returning %d tasks", task_count);
   return tasks;
 }
 
@@ -184,7 +184,7 @@ uint16_t num_ids(uint8_t *ids) {
   while (ids[pos] != 0)
     pos++;
 
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "Returning %d", pos);  
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "Returning %d", pos);
   return pos;
 }
 
