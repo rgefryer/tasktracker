@@ -9,8 +9,8 @@
     "resources": {
         "media": [
             {
-                "file": "images/menu_tube.png",
-                "name": "MENU_ICON_TUBE",
+                "file": "images/menu_bus.png",
+                "name": "MENU_ICON_BUS",
                 "type": "png"
             },
             {
@@ -19,8 +19,8 @@
                 "type": "png"
             },
             {
-                "file": "images/menu_bus.png",
-                "name": "MENU_ICON_BUS",
+                "file": "images/menu_tube.png",
+                "name": "MENU_ICON_TUBE",
                 "type": "png"
             }
         ]

@@ -95,7 +95,7 @@ bool bitfield_get(char *bitfield, int bit) {
   bit = bit % 8;
   char mask = 0x01 << bit;
 
-  if (bitfield[byte] | mask) {
+  if (bitfield[byte] & mask) {
     return true;
   }
   else {

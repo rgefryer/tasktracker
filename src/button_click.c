@@ -231,10 +231,10 @@ static void cb_select(char *result) {
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
   APP_LOG(APP_LOG_LEVEL_DEBUG, "select_click_handler");
   text_layer_set_text(text_layer, "Select");
-  show_testmenu(cb_select,
-                cb_num_items,
-                cb_item_text,
-                cb_is_menu,
+  show_testmenu(task_cb_select,
+                task_cb_num_items,
+                task_cb_item_text,
+                task_cb_is_menu,
                 "/1/1");
 }
 
