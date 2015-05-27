@@ -231,10 +231,10 @@ static void cb_select(char *result) {
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
   APP_LOG(APP_LOG_LEVEL_DEBUG, "select_click_handler");
   text_layer_set_text(text_layer, "Select");
-  show_testmenu(cb_select,
-                cb_num_items,
-                cb_item_text,
-                cb_is_menu,
+  show_testmenu(task_cb_select,
+                task_cb_num_items,
+                task_cb_item_text,
+                task_cb_is_menu,
                 "/1/1");
 }
 
@@ -273,7 +273,7 @@ static void window_unload(Window *window) {
 
 static void init(void) {
   APP_LOG(APP_LOG_LEVEL_DEBUG, "init");
-  //data_load();
+  data_load();
   window = window_create();
   window_set_click_config_provider(window, click_config_provider);
   window_set_window_handlers(window, (WindowHandlers) {
@@ -286,7 +286,7 @@ static void init(void) {
 
 static void deinit(void) {
   APP_LOG(APP_LOG_LEVEL_DEBUG, "deinit");
-  //data_save();
+  data_save();
   window_destroy(window);
 }
 
