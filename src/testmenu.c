@@ -37,7 +37,6 @@ static int s_menu_stack_pos = 0;  // Next slot to push
   Deconstruct a menu ID into an array of integers.
 */
 uint8_t menu_parts(char *id, uint8_t *parts) {
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "menu_parts(%s) {", id);
   char part_str[MAX_MENU_PART_DIGITS+1];
 
   uint8_t part = 0;
@@ -57,7 +56,6 @@ uint8_t menu_parts(char *id, uint8_t *parts) {
       id++;
   }
 
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "menu_parts: Returning %d part(s)", part);
   parts[part] = 0;
   return part;
 }
@@ -69,14 +67,10 @@ uint8_t menu_parts(char *id, uint8_t *parts) {
 */
 char *create_item_id_from_row(int num, char *buff)
 {
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "create_item_id_from_row(%d)", num);
-
   num += 1;  // The menu numbering is 1-based
 
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "create_item_id_from_row: appending to %s", s_menu);
   snprintf(buff, MAX_ITEM_ID_LEN, "%s%u", s_menu, num);
 
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "create_item_id_from_row: returning %s", buff);
   return buff;
 }
 
@@ -111,7 +105,6 @@ static void destroy_ui(void) {
 // END AUTO-GENERATED UI CODE
 
 void push_menu() {
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "push_menu {");
   if (s_menu_stack_pos == MAX_MENU_DEPTH) {
     return;
   }
@@ -124,7 +117,6 @@ void push_menu() {
 }
 
 void pop_menu() {
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "pop_menu {");
   if (s_menu_stack_pos == 0) {
     s_window = NULL;  // Flag that we've fully rewound
     return;
@@ -144,7 +136,6 @@ void pop_menu() {
 }
 
 static void handle_window_load(Window* me) {
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "handle_window_load {");
   menu_layer_set_callbacks(s_menulayer_1, NULL, (MenuLayerCallbacks){
     .get_num_sections = menu_get_num_sections_callback,
     .get_num_rows = menu_get_num_rows_callback,
@@ -162,7 +153,6 @@ static void handle_window_load(Window* me) {
 }
 
 static void handle_window_unload(Window* window) {
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "handle_window_unload {");
   destroy_ui();
   //gbitmap_destroy(icons[ICON_THANKS]);
   //gbitmap_destroy(icons[ICON_BUS]);
@@ -177,35 +167,27 @@ static void handle_window_unload(Window* window) {
 }
 
 uint16_t menu_get_num_sections_callback(MenuLayer *me, void *data) {
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "menu_get_num_sections_callback { 1 }");
   return 1;
 }
 
 uint16_t menu_get_num_rows_callback(MenuLayer *me, uint16_t section_index, void *data) {
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "menu_get_num_rows_callback {");
   uint16_t rows = num_items_callback(s_menu);
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "menu_get_num_rows_callback: return %d }", rows);
   return rows;
 }
 
 int16_t menu_get_header_height_callback(MenuLayer *me, uint16_t section_index, void *data) {
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "menu_get_header_height_callback { 0 }");
   return 0;
 }
 
 int16_t menu_get_cell_height_callback(MenuLayer *me, MenuIndex* cell_index, void *data) {
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "menu_get_cell_height_callback { 20 }");
   return 20;
 }
 
 void menu_draw_header_callback(GContext* ctx, const Layer *cell_layer, uint16_t section_index, void *data) {
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "menu_draw_header_callback { }");
   // Do nothing.
 }
 
 void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuIndex *cell_index, void *data) {
-
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "menu_draw_row_callback: row %d in menu %s", cell_index->row, s_menu);
 
   graphics_context_set_text_color(ctx, GColorWhite);
   //if (icon) {
@@ -231,8 +213,6 @@ void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuIndex *c
 }
 
 void menu_select_click_callback(MenuLayer *menu_layer, MenuIndex *cell_index, void *callback_context) {
-
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "menu_select_click_callback {");
   char item_id[MAX_ITEM_ID_LEN];
   create_item_id_from_row(cell_index->row, item_id);
   if (is_menu_callback(item_id)) {
@@ -250,7 +230,6 @@ void menu_select_click_callback(MenuLayer *menu_layer, MenuIndex *cell_index, vo
 }
 
 void start_submenu() {
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "start_submenu {");
   initialise_ui();
   window_set_window_handlers(s_window, (WindowHandlers) {
     .load = handle_window_load,
@@ -266,7 +245,6 @@ void show_testmenu(select_cb_t select_cb,
                    is_menu_cb_t is_menu_cb,
                    char *selection) {
 
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "show_testmenu {");
   is_menu_callback = is_menu_cb;
   num_items_callback = num_items_cb;
   item_text_callback = item_text_cb;
@@ -275,7 +253,6 @@ void show_testmenu(select_cb_t select_cb,
   s_selected = false;
 
   // Initialise this menu
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "show_testmenu: display menu");
   start_submenu();
 
   // While there is a selected item, we select and create menus
@@ -291,7 +268,6 @@ void show_testmenu(select_cb_t select_cb,
       .section = 0,
       .row = this_row
     };
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "show_testmenu: select item");
     menu_layer_set_selected_index(s_menulayer_1, mi, MenuRowAlignCenter, false);
 
     // If there's another selection coming along, load the submenu
@@ -300,17 +276,13 @@ void show_testmenu(select_cb_t select_cb,
       char item_id[MAX_ITEM_ID_LEN];
       create_item_id_from_row(this_row, item_id);
       if (is_menu_callback(item_id)) {
-        APP_LOG(APP_LOG_LEVEL_DEBUG, "show_testmenu: display submenu");
         snprintf(s_menu, MAX_ITEM_ID_LEN, "%s/", item_id);
         start_submenu();
       }
     }
   }
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "show_testmenu }");
 }
 
 void hide_testmenu(void) {
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "hide_testmenu {");
   window_stack_remove(s_window, true);
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "hide_testmenu }");
 }

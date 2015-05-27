@@ -8,7 +8,6 @@ static Window *s_window;
 static GFont s_res_bitham_42_medium_numbers;
 static GFont s_res_roboto_condensed_21;
 static TextLayer *clockface;
-static InverterLayer *s_inverterlayer_1;
 static TextLayer *this_task_name;
 static TextLayer *this_task_current;
 static TextLayer *last_task_name;
@@ -32,17 +31,13 @@ static void initialise_ui(void) {
   s_res_bitham_42_medium_numbers = fonts_get_system_font(FONT_KEY_BITHAM_42_MEDIUM_NUMBERS);
   s_res_roboto_condensed_21 = fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21);
   // clockface
-  clockface = text_layer_create(GRect(1, 117, 140, 49));
+  clockface = text_layer_create(GRect(1, 121, 140, 49));
   text_layer_set_background_color(clockface, GColorBlack);
   text_layer_set_text_color(clockface, GColorWhite);
   text_layer_set_text(clockface, "00:00");
   text_layer_set_text_alignment(clockface, GTextAlignmentCenter);
   text_layer_set_font(clockface, s_res_bitham_42_medium_numbers);
   layer_add_child(window_get_root_layer(s_window), (Layer *)clockface);
-  
-  // s_inverterlayer_1
-  s_inverterlayer_1 = inverter_layer_create(GRect(2, 128, 140, 1));
-  layer_add_child(window_get_root_layer(s_window), (Layer *)s_inverterlayer_1);
   
   // this_task_name
   this_task_name = text_layer_create(GRect(2, 2, 140, 15));
@@ -75,7 +70,7 @@ static void initialise_ui(void) {
   layer_add_child(window_get_root_layer(s_window), (Layer *)last_task_current);
   
   // s_inverterlayer_2
-  s_inverterlayer_2 = inverter_layer_create(GRect(1, 66, 140, 1));
+  s_inverterlayer_2 = inverter_layer_create(GRect(1, 68, 140, 1));
   layer_add_child(window_get_root_layer(s_window), (Layer *)s_inverterlayer_2);
   
   // goal_name
@@ -115,7 +110,7 @@ static void initialise_ui(void) {
   layer_add_child(window_get_root_layer(s_window), (Layer *)goal_remaining);
   
   // date
-  date = text_layer_create(GRect(3, 101, 139, 25));
+  date = text_layer_create(GRect(3, 104, 139, 25));
   text_layer_set_background_color(date, GColorBlack);
   text_layer_set_text_color(date, GColorWhite);
   text_layer_set_text(date, "May 27");
@@ -123,14 +118,13 @@ static void initialise_ui(void) {
   layer_add_child(window_get_root_layer(s_window), (Layer *)date);
   
   // s_inverterlayer_3
-  s_inverterlayer_3 = inverter_layer_create(GRect(2, 101, 140, 1));
+  s_inverterlayer_3 = inverter_layer_create(GRect(2, 103, 140, 1));
   layer_add_child(window_get_root_layer(s_window), (Layer *)s_inverterlayer_3);
 }
 
 static void destroy_ui(void) {
   window_destroy(s_window);
   text_layer_destroy(clockface);
-  inverter_layer_destroy(s_inverterlayer_1);
   text_layer_destroy(this_task_name);
   text_layer_destroy(this_task_current);
   text_layer_destroy(last_task_name);
@@ -173,6 +167,36 @@ static void click_config_provider(void *context) {
   window_single_click_subscribe(BUTTON_ID_DOWN, down_click_handler);
 }
 
+static void update_time() {
+  // Get a tm structure
+  time_t temp = time(NULL); 
+  struct tm *tick_time = localtime(&temp);
+
+  // Create a long-lived buffer
+  static char buffer[] = "00:00";
+  static char buffer2[] = "Dec 25";
+
+  // Write the current hours and minutes into the buffer
+  if(clock_is_24h_style() == true) {
+    // Use 24 hour format
+    strftime(buffer, sizeof("00:00"), "%H:%M", tick_time);
+  } else {
+    // Use 12 hour format
+    strftime(buffer, sizeof("00:00"), "%I:%M", tick_time);
+  }
+
+  strftime(buffer2, sizeof("Dec 25"), "%b %e", tick_time);
+
+  
+  // Display this time on the TextLayer
+  text_layer_set_text(clockface, buffer);
+  text_layer_set_text(date, buffer2);
+}
+
+static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
+  update_time();
+}
+
 void show_main(void) {
   initialise_ui();
   window_set_click_config_provider(s_window, click_config_provider); 
@@ -180,6 +204,12 @@ void show_main(void) {
     .unload = handle_window_unload,
   });
   window_stack_push(s_window, true);
+  
+  // Register with TickTimerService
+  tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);  
+  
+  // Make sure the time is displayed from the start
+  update_time();  
 }
 
 void hide_main(void) {
