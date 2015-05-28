@@ -8,18 +8,14 @@ static Window *s_window;
 static GFont s_res_bitham_42_medium_numbers;
 static GFont s_res_roboto_condensed_21;
 static TextLayer *clockface;
-static TextLayer *this_task_name;
+static TextLayer *this_task_text;
 static TextLayer *this_task_current;
-static TextLayer *last_task_name;
-static TextLayer *last_task_current;
-static InverterLayer *s_inverterlayer_2;
-static TextLayer *goal_name;
-static TextLayer *goal_target;
+static TextLayer *label_text;
 static TextLayer *this_task_total;
-static TextLayer *last_task_total;
-static TextLayer *goal_remaining;
+static TextLayer *label_remaining;
 static TextLayer *date;
 static InverterLayer *s_inverterlayer_3;
+static InverterLayer *s_inverterlayer_2;
 
 static void initialise_ui(void) {
   s_window = window_create();
@@ -39,75 +35,47 @@ static void initialise_ui(void) {
   text_layer_set_font(clockface, s_res_bitham_42_medium_numbers);
   layer_add_child(window_get_root_layer(s_window), (Layer *)clockface);
   
-  // this_task_name
-  this_task_name = text_layer_create(GRect(2, 2, 140, 15));
-  text_layer_set_background_color(this_task_name, GColorBlack);
-  text_layer_set_text_color(this_task_name, GColorWhite);
-  text_layer_set_text(this_task_name, "Current task");
-  layer_add_child(window_get_root_layer(s_window), (Layer *)this_task_name);
+  // this_task_text
+  this_task_text = text_layer_create(GRect(2, 0, 140, 25));
+  text_layer_set_background_color(this_task_text, GColorBlack);
+  text_layer_set_text_color(this_task_text, GColorWhite);
+  text_layer_set_text(this_task_text, "Paused");
+  text_layer_set_font(this_task_text, s_res_roboto_condensed_21);
+  layer_add_child(window_get_root_layer(s_window), (Layer *)this_task_text);
   
   // this_task_current
-  this_task_current = text_layer_create(GRect(82, 18, 60, 15));
+  this_task_current = text_layer_create(GRect(72, 24, 69, 25));
   text_layer_set_background_color(this_task_current, GColorBlack);
   text_layer_set_text_color(this_task_current, GColorWhite);
-  text_layer_set_text(this_task_current, "1:15:32");
+  text_layer_set_text(this_task_current, "0:00:00");
   text_layer_set_text_alignment(this_task_current, GTextAlignmentRight);
+  text_layer_set_font(this_task_current, s_res_roboto_condensed_21);
   layer_add_child(window_get_root_layer(s_window), (Layer *)this_task_current);
   
-  // last_task_name
-  last_task_name = text_layer_create(GRect(2, 34, 140, 15));
-  text_layer_set_background_color(last_task_name, GColorBlack);
-  text_layer_set_text_color(last_task_name, GColorWhite);
-  text_layer_set_text(last_task_name, "Previous task");
-  layer_add_child(window_get_root_layer(s_window), (Layer *)last_task_name);
-  
-  // last_task_current
-  last_task_current = text_layer_create(GRect(81, 50, 60, 15));
-  text_layer_set_background_color(last_task_current, GColorBlack);
-  text_layer_set_text_color(last_task_current, GColorWhite);
-  text_layer_set_text(last_task_current, "0:15:32");
-  text_layer_set_text_alignment(last_task_current, GTextAlignmentRight);
-  layer_add_child(window_get_root_layer(s_window), (Layer *)last_task_current);
-  
-  // s_inverterlayer_2
-  s_inverterlayer_2 = inverter_layer_create(GRect(1, 68, 140, 1));
-  layer_add_child(window_get_root_layer(s_window), (Layer *)s_inverterlayer_2);
-  
-  // goal_name
-  goal_name = text_layer_create(GRect(2, 69, 140, 15));
-  text_layer_set_background_color(goal_name, GColorBlack);
-  text_layer_set_text_color(goal_name, GColorWhite);
-  text_layer_set_text(goal_name, "Goal 1");
-  layer_add_child(window_get_root_layer(s_window), (Layer *)goal_name);
-  
-  // goal_target
-  goal_target = text_layer_create(GRect(2, 84, 83, 15));
-  text_layer_set_background_color(goal_target, GColorBlack);
-  text_layer_set_text_color(goal_target, GColorWhite);
-  text_layer_set_text(goal_target, "Daily 7:30:00");
-  layer_add_child(window_get_root_layer(s_window), (Layer *)goal_target);
+  // label_text
+  label_text = text_layer_create(GRect(2, 53, 140, 25));
+  text_layer_set_background_color(label_text, GColorBlack);
+  text_layer_set_text_color(label_text, GColorWhite);
+  text_layer_set_text(label_text, "Label");
+  text_layer_set_font(label_text, s_res_roboto_condensed_21);
+  layer_add_child(window_get_root_layer(s_window), (Layer *)label_text);
   
   // this_task_total
-  this_task_total = text_layer_create(GRect(20, 18, 66, 15));
+  this_task_total = text_layer_create(GRect(1, 24, 72, 25));
   text_layer_set_background_color(this_task_total, GColorBlack);
   text_layer_set_text_color(this_task_total, GColorWhite);
-  text_layer_set_text(this_task_total, "2:15:10");
+  text_layer_set_text(this_task_total, "0:00:00");
+  text_layer_set_font(this_task_total, s_res_roboto_condensed_21);
   layer_add_child(window_get_root_layer(s_window), (Layer *)this_task_total);
   
-  // last_task_total
-  last_task_total = text_layer_create(GRect(20, 50, 66, 15));
-  text_layer_set_background_color(last_task_total, GColorBlack);
-  text_layer_set_text_color(last_task_total, GColorWhite);
-  text_layer_set_text(last_task_total, "0:15:32");
-  layer_add_child(window_get_root_layer(s_window), (Layer *)last_task_total);
-  
-  // goal_remaining
-  goal_remaining = text_layer_create(GRect(81, 84, 59, 15));
-  text_layer_set_background_color(goal_remaining, GColorBlack);
-  text_layer_set_text_color(goal_remaining, GColorWhite);
-  text_layer_set_text(goal_remaining, "3:23:15");
-  text_layer_set_text_alignment(goal_remaining, GTextAlignmentRight);
-  layer_add_child(window_get_root_layer(s_window), (Layer *)goal_remaining);
+  // label_remaining
+  label_remaining = text_layer_create(GRect(66, 77, 74, 25));
+  text_layer_set_background_color(label_remaining, GColorBlack);
+  text_layer_set_text_color(label_remaining, GColorWhite);
+  text_layer_set_text(label_remaining, "0:00:00");
+  text_layer_set_text_alignment(label_remaining, GTextAlignmentRight);
+  text_layer_set_font(label_remaining, s_res_roboto_condensed_21);
+  layer_add_child(window_get_root_layer(s_window), (Layer *)label_remaining);
   
   // date
   date = text_layer_create(GRect(3, 104, 139, 25));
@@ -120,23 +88,23 @@ static void initialise_ui(void) {
   // s_inverterlayer_3
   s_inverterlayer_3 = inverter_layer_create(GRect(2, 103, 140, 1));
   layer_add_child(window_get_root_layer(s_window), (Layer *)s_inverterlayer_3);
+  
+  // s_inverterlayer_2
+  s_inverterlayer_2 = inverter_layer_create(GRect(1, 50, 140, 1));
+  layer_add_child(window_get_root_layer(s_window), (Layer *)s_inverterlayer_2);
 }
 
 static void destroy_ui(void) {
   window_destroy(s_window);
   text_layer_destroy(clockface);
-  text_layer_destroy(this_task_name);
+  text_layer_destroy(this_task_text);
   text_layer_destroy(this_task_current);
-  text_layer_destroy(last_task_name);
-  text_layer_destroy(last_task_current);
-  inverter_layer_destroy(s_inverterlayer_2);
-  text_layer_destroy(goal_name);
-  text_layer_destroy(goal_target);
+  text_layer_destroy(label_text);
   text_layer_destroy(this_task_total);
-  text_layer_destroy(last_task_total);
-  text_layer_destroy(goal_remaining);
+  text_layer_destroy(label_remaining);
   text_layer_destroy(date);
   inverter_layer_destroy(s_inverterlayer_3);
+  inverter_layer_destroy(s_inverterlayer_2);
 }
 // END AUTO-GENERATED UI CODE
 
