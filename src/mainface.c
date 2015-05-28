@@ -1,6 +1,6 @@
 #include <pebble.h>
-#include "main.h"
-#include "button_click.h"
+#include "mainface.h"
+#include "mainmenu.h"
 #include "data.h"
 
 // BEGIN AUTO-GENERATED UI CODE; DO NOT MODIFY
