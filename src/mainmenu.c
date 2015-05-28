@@ -1,7 +1,7 @@
 #include <pebble.h>
 #include <testmenu.h>
 #include <data.h>
-#include <button_click.h>
+#include <mainmenu.h>
 
 // Menu callbacks for task items.  Menu structure is:
 //  /1    Recent
