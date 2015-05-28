@@ -112,10 +112,18 @@ static void handle_window_unload(Window* window) {
   destroy_ui();
 }
 
+// Callback when a task is selected from the main menu.
+// Start tracking the task.
+void new_task_cb(uint8_t task_id)
+{
+  char *text = task_name(task_id);
+  text_layer_set_text(this_task_text, text);
+}
+
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
   APP_LOG(APP_LOG_LEVEL_DEBUG, "select_click_handler");
   //text_layer_set_text(text_layer, "Select");
-  show_task_menu();
+  show_task_menu(new_task_cb);
 }
 
 static void up_click_handler(ClickRecognizerRef recognizer, void *context) {

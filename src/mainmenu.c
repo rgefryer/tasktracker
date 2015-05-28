@@ -3,6 +3,9 @@
 #include <data.h>
 #include <mainmenu.h>
 
+// Callback for when a task is selected from the menu  
+static new_task_cb_t task_callback; 
+  
 // Menu callbacks for task items.  Menu structure is:
 //  /1    Recent
 //  /2    Most recently used label
@@ -116,9 +119,35 @@ static void task_cb_select(char *result) {
   APP_LOG(APP_LOG_LEVEL_DEBUG, "task_cb_select");
   // Display the selected menu item in the text layer
   // text_layer_set_text(text_layer, result);
+  
+  uint8_t task_id = 0;
+  
+  // Deconstruct the menu ID
+  uint8_t parts[MAX_MENU_DEPTH];
+  int num_parts = menu_parts(result, parts);
+
+  // If there's two parts to the menu ID, we must have a task.
+  if (num_parts == 2) {
+    // Get the label ID
+    uint8_t label_id = 0;
+    if (parts[0] >= 2) {
+      // Get the label ID, unless this is the "Recents" submenu.
+      uint8_t *labels = ordered_labels();
+      label_id = labels[parts[0]-2];
+    }
+
+    uint8_t *tasks = ordered_tasks(label_id);
+    task_id = tasks[parts[1] - 1];    
+  }
+  
+  if (task_id != 0) {
+    task_callback(task_id);
+  } 
 }
 
-void show_task_menu() {
+void show_task_menu(new_task_cb_t task_cb) {
+  task_callback = task_cb;
+    
   show_menunest(task_cb_select,
                 task_cb_num_items,
                 task_cb_item_text,
