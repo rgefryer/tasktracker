@@ -8,7 +8,7 @@ char *g_task_names[NUM_TASKS+1];
 char *g_label_names[NUM_LABELS+1];
 #define SID_LABEL_NAME_BASE 2000
 
-time_t g_task_times[NUM_TASKS+1][TASK_ARCHIVE_WEEKS + TASK_ARCHIVE_WEEK_BASE];
+time_t g_task_times[NUM_TASKS+1][TASK_COUNTS];
 #define SID_TIMES_BASE 3000
 
 // Bit field of tasks that each label applies to.  Both label
@@ -22,6 +22,8 @@ struct Goal g_goals[NUM_GOALS+1];
 // Circular buffer of recent tasks
 uint8_t next_task_record = 0;
 uint8_t num_task_records = 0;
+
+bool g_paused = true;
 
 struct TaskRecord g_task_records[NUM_TASK_RECORDS];
 // 6000 is an array of the s_tasks; subsequent IDs have start/spent for
@@ -56,7 +58,8 @@ char *s_tasks[] = {
   "GR status",   // 3
   "Status",      // 4
   "Tracking",    // 5
-  "Hackathon"    // 6
+  "Hackathon",   // 6
+  "Management",  // 7
 };
 
 char *s_labels[] = {
@@ -79,7 +82,9 @@ char s_link_data[] = {
   5, 1,
   5, 3,
   6, 1,
-  6, 3
+  6, 3,
+  7, 1,
+  7, 3
 };
 
 
@@ -260,11 +265,11 @@ void data_load()
   // Load in goal history from storage
   int bytes_read;
   for (ix = 0; ix < NUM_GOALS; ix++) {
-    bytes_read = persist_read_data(g_sid_offset + SID_GOALS_BASE+ix,
+    bytes_read = persist_read_data(g_sid_offset + SID_GOALS_BASE + ix,
                                    &(g_goals[ix]),
                                    sizeof g_goals[ix]);
   }
-
+ 
   // Load in task history from storage
   char task_array[NUM_TASK_RECORDS];
   bytes_read = persist_read_data(g_sid_offset + SID_HISTORY_TASK_IDS,
@@ -273,7 +278,7 @@ void data_load()
   for (ix = 0; ix < bytes_read; ix++) {
     if (task_array[ix] != 0) {
       g_task_records[ix].task =  task_array[ix];
-      persist_read_data(g_sid_offset + SID_HISTORY_TASK_IDS+ix,
+      persist_read_data(g_sid_offset + SID_HISTORY_TASK_IDS + ix,
                         &(g_task_records[ix]),
                         offsetof(struct TaskRecord, task));
       next_task_record++;
@@ -388,11 +393,10 @@ bool data_save()
   int pos = 0;
   while (count != 0) {
 
-    bytes_written += persist_write_data(g_sid_offset + SID_HISTORY_TASK_IDS+pos,
+    bytes_written += persist_write_data(g_sid_offset + SID_HISTORY_TASK_IDS + pos,
                                        &(g_task_records[ix]),
                                        offsetof(struct TaskRecord, task));
     bytes_to_write += offsetof(struct TaskRecord, task);
-    // or: OFFSETOF(type, field)    ((unsigned long) &(((type *) 0)->field)) if not supported
     task_array[pos++] = g_task_records[ix].task;
 
     if (++ix == NUM_TASK_RECORDS) {
@@ -453,6 +457,9 @@ void start_new_task(uint8_t id) {
   
   // @@@ Update the list of recently used tasks
 
+  // Ensure we're not paused
+  g_paused = false;
+  
   // Initialise a new task record
   g_task_records[next_task_record].start_time = g_latest_time;
   g_task_records[next_task_record].spent = 0;
@@ -487,17 +494,34 @@ uint32_t time_in_current_task() {
 
 // Return the ID of the current task, or 0 if paused.
 uint8_t current_task_id() {
-  return g_task_records[curr_record_index()].task;
+  if (g_paused)
+    return 0;
+  else
+    return g_task_records[curr_record_index()].task;
 }
   
+void pause_tracking() {
+  g_paused = true;
+}
+
+// Is tracking paused?
+bool tracking_paused() {
+  return g_paused;
+}
+
 // Receive the latest time from the UI code.
 void update_tracked_time(time_t time_now) {
 
+  if (g_paused || (g_latest_time == 0)) {
+    g_latest_time = time_now;
+    return;
+  }
+  
   // Update the running totals of time on each task
   uint8_t task_id = current_task_id();
   time_t delta = time_now - g_latest_time;
   g_task_times[task_id][TASK_COUNT_TODAY] += delta;
-  g_task_times[task_id][TASK_COUNT_WEEK] += delta;
+  g_task_times[task_id][TASK_COUNT_THIS_WEEK] += delta;
   
   // Update the current task record
   g_latest_time = time_now;

@@ -3,7 +3,7 @@
 
 extern char *g_task_names[NUM_TASKS+1];
 extern char *g_label_names[NUM_LABELS+1];
-extern time_t g_task_times[NUM_TASKS+1][TASK_ARCHIVE_WEEKS + TASK_ARCHIVE_WEEK_BASE];
+extern time_t g_task_times[NUM_TASKS+1][TASK_COUNTS];
 extern char g_label_task_links[NUM_LABELS+1][LINK_BITFIELD_LEN];
 
 struct Goal {

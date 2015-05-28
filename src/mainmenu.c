@@ -5,7 +5,12 @@
 
 // Callback for when a task is selected from the menu  
 static new_task_cb_t task_callback; 
+
+// Callback for when pause is selected from the menu  
+static pause_cb_t pause_callback; 
   
+
+
 // Menu callbacks for task items.  Menu structure is:
 //  /1    Recent
 //  /2    Most recently used label
@@ -48,6 +53,9 @@ static uint16_t task_cb_num_items(char *name) {
 
     uint8_t *tasks = ordered_tasks(0);
     int task_count = num_ids(tasks);
+    if (!tracking_paused()) {
+      task_count++;  // Add 1 for "Pause"
+    }
     if (task_count < MAX_RECENT_TASKS)
       return task_count;
     else
@@ -72,7 +80,7 @@ static char *task_cb_item_text(char *name) {
   APP_LOG(APP_LOG_LEVEL_DEBUG, "task_cb_item_text(%s)", name);
   uint8_t parts[MAX_MENU_DEPTH];
   int num_parts = menu_parts(name, parts);
-  char *rc = "Unknown";
+  char *rc = NULL;
 
   // It's a menu if the ID ends with a '/'
   bool is_menu = (name[strlen(name)-1] == '/');
@@ -87,22 +95,47 @@ static char *task_cb_item_text(char *name) {
 
   else {
     // Get the label ID
-    uint8_t *labels = ordered_labels();
-    uint8_t label_id = labels[parts[0]-2];
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "task_cb_item_text: Translate menu %d to label ID %d", parts[0], label_id);
+    uint8_t label_id = 0;
+    if (parts[0] != 1) {
+      uint8_t *labels = ordered_labels();
+      label_id = labels[parts[0]-2];
+      APP_LOG(APP_LOG_LEVEL_DEBUG, "task_cb_item_text: Translate menu %d to label ID %d", parts[0], label_id);      
 
-    if (num_parts == 1) {
-      APP_LOG(APP_LOG_LEVEL_DEBUG, "task_cb_item_text: Get label name for label ID %d", label_id);
-      rc = label_name(label_id);
+      // If we're looking for a label name, set it up
+      if (num_parts == 1) {
+        APP_LOG(APP_LOG_LEVEL_DEBUG, "task_cb_item_text: Get label name for label ID %d", label_id);
+        rc = label_name(label_id);
+      }
     }
-    else {
+
+    // Handle the "Pause" at the top of the Recents menu
+    uint8_t task_ix = parts[1] - 1; // Because menu-IDs are 1-based
+    if (!tracking_paused() && (rc == NULL)) {
       APP_LOG(APP_LOG_LEVEL_DEBUG, "task_cb_item_text: Get task name");
+      if (parts[0] == 1)
+      {
+        // Recents menu - ignore the pause option
+        if (task_ix == 0) {
+          rc = "Pause";
+        }
+        else {
+          task_ix -= 1;  // To make space for the pause option
+        }
+      }
+    }
+      
+    // Get the task name from the ordered tasks
+    if (rc == NULL) {
       uint8_t *tasks = ordered_tasks(label_id);
-      uint8_t task_id = tasks[parts[1] - 1];
+      uint8_t task_id = tasks[task_ix];
       rc = task_name(task_id);
     }
   }
 
+  if (rc == NULL) {
+    rc = "Unknown";
+  }
+  
   if (strlen(rc) >= MAX_MENU_ITEM_LEN)
   {
     APP_LOG(APP_LOG_LEVEL_DEBUG, "task_cb_item_text: dumping %s: too long", rc);
@@ -136,6 +169,16 @@ static void task_cb_select(char *result) {
       label_id = labels[parts[0]-2];
     }
 
+    // Special case entry 1 in the recents menu, which is pause
+    if (!tracking_paused() && (parts[0] == 1)) {
+      if (parts[1] == 1) {
+        pause_callback();
+        return;
+      }
+      parts[1]--;
+    }
+
+    // Get the task ID.
     uint8_t *tasks = ordered_tasks(label_id);
     task_id = tasks[parts[1] - 1];    
   }
@@ -145,9 +188,10 @@ static void task_cb_select(char *result) {
   } 
 }
 
-void show_task_menu(new_task_cb_t task_cb) {
+void show_task_menu(new_task_cb_t task_cb, pause_cb_t pause_cb) {
   task_callback = task_cb;
-    
+  pause_callback = pause_cb;
+
   show_menunest(task_cb_select,
                 task_cb_num_items,
                 task_cb_item_text,

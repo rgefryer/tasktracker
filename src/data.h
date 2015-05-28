@@ -6,10 +6,11 @@
 #define MAX_LABEL_NAME_LEN 25
 #define NUM_LABELS 10
 
-#define TASK_ARCHIVE_WEEKS 1
 #define TASK_COUNT_TODAY 0
-#define TASK_COUNT_WEEK 1
-#define TASK_ARCHIVE_WEEK_BASE 2
+#define TASK_COUNT_YESTERDAY 1
+#define TASK_COUNT_THIS_WEEK 2
+#define TASK_COUNT_LAST_WEEK 3
+#define TASK_COUNTS 4
 
 #define LINK_BITFIELD_LEN ((NUM_TASKS+8)/8)
 
@@ -70,3 +71,9 @@ uint8_t current_task_id();
 
 // Pass the latest time to the tracking data
 void update_tracked_time(time_t time_now);
+
+// Go into pause mode
+void pause_tracking();
+
+// Is tracking paused?
+bool tracking_paused();

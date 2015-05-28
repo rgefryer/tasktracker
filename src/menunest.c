@@ -237,6 +237,7 @@ void start_submenu() {
   });
   text_layer_set_text(s_textlayer_1, item_text_callback(s_menu));
   window_stack_push(s_window, true);
+  menu_layer_reload_data(s_menulayer_1);
 }
 
 void show_menunest(select_cb_t select_cb,

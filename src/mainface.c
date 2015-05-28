@@ -124,10 +124,22 @@ void new_task_cb(uint8_t task_id)
   start_new_task(task_id);
 }
 
+// Callback when a "Pause"
+void pause_cb()
+{
+  // Update the display of the current task
+  text_layer_set_text(this_task_text, "Paused");
+  
+  // Tell the data layer that we are pausing
+  pause_tracking();
+}
+
+
+
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
   APP_LOG(APP_LOG_LEVEL_DEBUG, "select_click_handler");
   //text_layer_set_text(text_layer, "Select");
-  show_task_menu(new_task_cb);
+  show_task_menu(new_task_cb, pause_cb);
 }
 
 static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
