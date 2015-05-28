@@ -55,3 +55,18 @@ uint16_t num_ids(uint8_t *ids);
 // Return the task/label name corresponding to an ID
 char *label_name(uint8_t id);
 char *task_name(uint8_t id);
+
+// Trigger the startup of a new task
+void start_new_task(uint8_t id);
+
+// Return the number of seconds spent on a task, today
+uint32_t time_in_task_today(uint8_t id);
+
+// Return the number of seconds spent on the current task
+uint32_t time_in_current_task();
+
+// Return the ID of the current task
+uint8_t current_task_id();
+
+// Pass the latest time to the tracking data
+void update_tracked_time(time_t time_now);

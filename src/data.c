@@ -47,6 +47,9 @@ int g_sid_offset = 0;
 #define SID_OFFSET 10000
 #define SID_OFFSET_ID 1
 
+// Latest time notified to the tracking code.
+time_t g_latest_time = 0;
+  
 char *s_tasks[] = {
   "GR testing",  // 1
   "GR kit",      // 2
@@ -431,3 +434,73 @@ bool data_save()
   return true;
 }
 
+// Return the index of the current record
+uint8_t curr_record_index() {
+  if (num_task_records == 0) {
+    return 0;
+  }
+  else if (next_task_record == 0) {
+    return NUM_TASK_RECORDS - 1;
+  }
+  else {
+    return next_task_record - 1;
+  }
+}
+
+
+// Trigger the startup of a new task
+void start_new_task(uint8_t id) {
+  
+  // @@@ Update the list of recently used tasks
+
+  // Initialise a new task record
+  g_task_records[next_task_record].start_time = g_latest_time;
+  g_task_records[next_task_record].spent = 0;
+  g_task_records[next_task_record].task = id;
+  
+  // Update the buffer pointer and counter
+  if (++next_task_record == NUM_TASK_RECORDS) {
+    next_task_record = 0;
+  }
+  if (++num_task_records > NUM_TASK_RECORDS) {
+    num_task_records = NUM_TASK_RECORDS;
+  }
+      
+  return;
+}
+
+// Return the number of seconds spent on a task, today
+uint32_t time_in_task_today(uint8_t id) {
+  if (id != 0)
+    return g_task_times[id][TASK_COUNT_TODAY];
+  else
+    return 0;
+}  
+
+// Return the number of seconds spent on the current task
+uint32_t time_in_current_task() {
+  if (current_task_id() != 0)
+    return g_task_records[curr_record_index()].spent;
+  else
+    return 0;
+}
+
+// Return the ID of the current task, or 0 if paused.
+uint8_t current_task_id() {
+  return g_task_records[curr_record_index()].task;
+}
+  
+// Receive the latest time from the UI code.
+void update_tracked_time(time_t time_now) {
+
+  // Update the running totals of time on each task
+  uint8_t task_id = current_task_id();
+  time_t delta = time_now - g_latest_time;
+  g_task_times[task_id][TASK_COUNT_TODAY] += delta;
+  g_task_times[task_id][TASK_COUNT_WEEK] += delta;
+  
+  // Update the current task record
+  g_latest_time = time_now;
+  uint8_t record_ix = curr_record_index();
+  g_task_records[record_ix].spent = time_now - g_task_records[record_ix].start_time;  
+}

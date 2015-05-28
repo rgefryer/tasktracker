@@ -44,10 +44,10 @@ static void initialise_ui(void) {
   layer_add_child(window_get_root_layer(s_window), (Layer *)this_task_text);
   
   // this_task_current
-  this_task_current = text_layer_create(GRect(72, 24, 69, 25));
+  this_task_current = text_layer_create(GRect(54, 24, 87, 25));
   text_layer_set_background_color(this_task_current, GColorBlack);
   text_layer_set_text_color(this_task_current, GColorWhite);
-  text_layer_set_text(this_task_current, "0:00:00");
+  text_layer_set_text(this_task_current, "00:00:00");
   text_layer_set_text_alignment(this_task_current, GTextAlignmentRight);
   text_layer_set_font(this_task_current, s_res_roboto_condensed_21);
   layer_add_child(window_get_root_layer(s_window), (Layer *)this_task_current);
@@ -61,10 +61,10 @@ static void initialise_ui(void) {
   layer_add_child(window_get_root_layer(s_window), (Layer *)label_text);
   
   // this_task_total
-  this_task_total = text_layer_create(GRect(1, 24, 72, 25));
+  this_task_total = text_layer_create(GRect(1, 24, 51, 25));
   text_layer_set_background_color(this_task_total, GColorBlack);
   text_layer_set_text_color(this_task_total, GColorWhite);
-  text_layer_set_text(this_task_total, "0:00:00");
+  text_layer_set_text(this_task_total, "00:00");
   text_layer_set_font(this_task_total, s_res_roboto_condensed_21);
   layer_add_child(window_get_root_layer(s_window), (Layer *)this_task_total);
   
@@ -116,8 +116,12 @@ static void handle_window_unload(Window* window) {
 // Start tracking the task.
 void new_task_cb(uint8_t task_id)
 {
+  // Update the display of the current task
   char *text = task_name(task_id);
   text_layer_set_text(this_task_text, text);
+  
+  // Tell the data layer that we are starting a new task
+  start_new_task(task_id);
 }
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
@@ -143,9 +147,23 @@ static void click_config_provider(void *context) {
   window_single_click_subscribe(BUTTON_ID_DOWN, down_click_handler);
 }
 
+// Format a duration for display
+void format_duration(time_t duration, char* buffer, bool secs) {
+  int seconds = (int)duration % 60;
+  int minutes = (int)duration / 60 % 60;
+  int hours = (int)duration / 3600;
+
+  if (secs)
+    snprintf(buffer, 9, "%02d:%02d:%02d", hours, minutes, seconds);
+  else
+    snprintf(buffer, 9, "%02d:%02d", hours, minutes);    
+}
+
+
 static void update_time() {
   // Get a tm structure
   time_t temp = time(NULL); 
+  update_tracked_time(temp);
   struct tm *tick_time = localtime(&temp);
 
   // Create a long-lived buffer
@@ -162,11 +180,23 @@ static void update_time() {
   }
 
   strftime(buffer2, sizeof("Dec 25"), "%b %e", tick_time);
-
   
   // Display this time on the TextLayer
   text_layer_set_text(clockface, buffer);
   text_layer_set_text(date, buffer2);
+  
+  // Update the time spent on the current task today.
+  static char buffer3[] = "00:00:00";
+  uint8_t task_id = current_task_id();
+  uint32_t task_time = time_in_task_today(task_id);
+  format_duration(task_time, buffer3, false);
+  text_layer_set_text(this_task_total, buffer3);
+  
+  // Update the time spent on the current task today.
+  static char buffer4[] = "00:00:00";
+  task_time = time_in_current_task();
+  format_duration(task_time, buffer4, true);
+  text_layer_set_text(this_task_current, buffer4);
 }
 
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
@@ -182,7 +212,7 @@ void show_main(void) {
   window_stack_push(s_window, true);
   
   // Register with TickTimerService
-  tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);  
+  tick_timer_service_subscribe(SECOND_UNIT, tick_handler);  
   
   // Make sure the time is displayed from the start
   update_time();  
