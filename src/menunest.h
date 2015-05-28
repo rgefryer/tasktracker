@@ -30,13 +30,13 @@ typedef void (*select_cb_t)(char *result);
 uint8_t menu_parts(char *id, uint8_t *results);
 
 // Show the menu
-void show_testmenu(select_cb_t select_cb,
+void show_menunest(select_cb_t select_cb,
                    num_items_cb_t num_items_cb,
                    item_text_cb_t item_text_cb,
                    is_menu_cb_t is_menu_cb,
                    char *selection);
 
 // Hide the menu
-void hide_testmenu(void);
+void hide_menunest(void);
 
 

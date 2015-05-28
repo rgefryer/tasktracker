@@ -162,7 +162,7 @@ static void handle_window_unload(Window* window) {
   // If we've selected, made sure that all windows
   // are removed.
   if (s_selected && s_window) {
-    hide_testmenu();
+    hide_menunest();
   }
 }
 
@@ -223,7 +223,7 @@ void menu_select_click_callback(MenuLayer *menu_layer, MenuIndex *cell_index, vo
   else {
     // Just an item.  Tidy up the menu(s) and return it to the caller.
     s_selected = true;
-    hide_testmenu();
+    hide_menunest();
     select_callback(item_id);
   }
 
@@ -239,7 +239,7 @@ void start_submenu() {
   window_stack_push(s_window, true);
 }
 
-void show_testmenu(select_cb_t select_cb,
+void show_menunest(select_cb_t select_cb,
                    num_items_cb_t num_items_cb,
                    item_text_cb_t item_text_cb,
                    is_menu_cb_t is_menu_cb,
@@ -283,6 +283,6 @@ void show_testmenu(select_cb_t select_cb,
   }
 }
 
-void hide_testmenu(void) {
+void hide_menunest(void) {
   window_stack_remove(s_window, true);
 }

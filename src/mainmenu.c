@@ -119,10 +119,10 @@ static void task_cb_select(char *result) {
 }
 
 void show_task_menu() {
-  show_testmenu(task_cb_select,
+  show_menunest(task_cb_select,
                 task_cb_num_items,
                 task_cb_item_text,
                 task_cb_is_menu,
-                "/1/1");  
+                "/1/1");
 }
 
