@@ -1,5 +1,5 @@
 #include <pebble.h>
-#include <testmenu.h>
+#include <menunest.h>
 
 static uint16_t menu_get_num_sections_callback(MenuLayer *me, void *data);
 static uint16_t menu_get_num_rows_callback(MenuLayer *me, uint16_t section_index, void *data);
