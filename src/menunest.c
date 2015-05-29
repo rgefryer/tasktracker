@@ -85,15 +85,16 @@ static void initialise_ui(void) {
   window_set_fullscreen(s_window, true);
 
   // s_menulayer_1
-  s_menulayer_1 = menu_layer_create(GRect(1, 20, 144, 140));
+  s_menulayer_1 = menu_layer_create(GRect(1, 20, 144, 147));
   menu_layer_set_click_config_onto_window(s_menulayer_1, s_window);
   layer_add_child(window_get_root_layer(s_window), (Layer *)s_menulayer_1);
 
   // s_textlayer_1
-  s_textlayer_1 = text_layer_create(GRect(2, 0, 143, 19));
+  s_textlayer_1 = text_layer_create(GRect(1, -6, 144, 26));
   text_layer_set_background_color(s_textlayer_1, GColorBlack);
   text_layer_set_text_color(s_textlayer_1, GColorWhite);
-  text_layer_set_text(s_textlayer_1, "Top");
+  text_layer_set_text(s_textlayer_1, "");
+  text_layer_set_font(s_textlayer_1, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
   layer_add_child(window_get_root_layer(s_window), (Layer *)s_textlayer_1);
 }
 
@@ -209,8 +210,8 @@ void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuIndex *c
 
   graphics_draw_text(ctx,
                      item,
-                     fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD),
-                     GRect(4, 2, 136, 18),
+                     fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD),
+                     GRect(2, -2, 138, 20),
                      GTextOverflowModeFill,
                      GTextAlignmentLeft,
                      NULL);

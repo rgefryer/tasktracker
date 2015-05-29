@@ -63,6 +63,9 @@ void start_new_task(uint8_t id, time_t start_time);
 // Return the number of seconds spent on a task, today
 uint32_t time_in_task_today(uint8_t id);
 
+// Return the number of seconds spent on a label, today
+uint32_t time_in_label_today(uint8_t id);
+
 // Return the number of seconds spent on the current task
 uint32_t time_in_current_task();
 

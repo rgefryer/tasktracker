@@ -10,6 +10,9 @@ bool g_menu_open = false;
 bool g_paused = true;
 time_t g_pause_start_time = 0;
 
+// ID of label to display
+uint8_t current_label = 0;
+
 // Controlling backgound reminders
 time_t g_next_vibe_time = 0;
 #define PAUSE_VIBE_INTERVAL (5 * 60)
@@ -86,7 +89,7 @@ static void initialise_ui(void) {
   label_text = text_layer_create(GRect(2, 53, 140, 25));
   text_layer_set_background_color(label_text, GColorBlack);
   text_layer_set_text_color(label_text, GColorWhite);
-  text_layer_set_text(label_text, "Label");
+  text_layer_set_text(label_text, "All tracked");
   text_layer_set_font(label_text, s_res_roboto_condensed_21);
   layer_add_child(window_get_root_layer(s_window), (Layer *)label_text);
 
@@ -99,7 +102,7 @@ static void initialise_ui(void) {
   layer_add_child(window_get_root_layer(s_window), (Layer *)this_task_total);
 
   // label_remaining
-  label_remaining = text_layer_create(GRect(66, 77, 74, 25));
+  label_remaining = text_layer_create(GRect(54, 77, 87, 25));
   text_layer_set_background_color(label_remaining, GColorBlack);
   text_layer_set_text_color(label_remaining, GColorWhite);
   text_layer_set_text(label_remaining, "0:00:00");
@@ -190,6 +193,7 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
   APP_LOG(APP_LOG_LEVEL_DEBUG, "select_click_handler");
   //text_layer_set_text(text_layer, "Select");
   g_menu_open = true;
+  set_next_vibe(0);
   show_task_menu(new_task_cb, pause_cb, nothing_selected_cb, g_paused);
 }
 
@@ -280,6 +284,10 @@ static void update_time(time_t time_now) {
   text_layer_set_text(this_task_total, buffer3);
   text_layer_set_text(this_task_current, buffer4);
 
+  static char buffer5[] = "00:00:00";
+  task_time = time_in_label_today(current_label);
+  format_duration(task_time, buffer5, true);
+  text_layer_set_text(label_remaining, buffer5);
 }
 
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
@@ -293,8 +301,7 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
       // Buzz
       vibes_short_pulse();
     }
-
-    set_next_vibe(time_now);
+    set_next_vibe(g_next_vibe_time);
   }
 
   if (!g_menu_open)
@@ -313,7 +320,7 @@ void show_main(void) {
   tick_timer_service_subscribe(SECOND_UNIT, tick_handler);
 
   // Make sure the time is displayed from the start
-  update_time();
+  update_time(time(NULL));
 }
 
 void hide_main(void) {

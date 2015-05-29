@@ -486,6 +486,24 @@ uint32_t time_in_task_today(uint8_t id) {
     return 0;
 }  
 
+// Return the number of seconds spent on a label, today.
+// An id of 0 totals all tasks.
+uint32_t time_in_label_today(uint8_t id) {
+  int ix;
+  uint32_t cumulative_time = 0;
+  for (ix = 1; ix <= NUM_TASKS; ix++) {
+    if (g_task_names[ix] != NULL) {
+      if ((id == 0) || bitfield_get(g_label_task_links[id], ix)) {
+        cumulative_time += g_task_times[ix][TASK_COUNT_TODAY];
+      }
+    }
+  }
+
+  return cumulative_time;
+}
+
+
+
 // Return the number of seconds spent on the current task
 uint32_t time_in_current_task() {
   if (current_task_id() != 0)
