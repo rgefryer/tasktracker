@@ -9,7 +9,9 @@ static new_task_cb_t task_callback;
 // Callback for when pause is selected from the menu  
 static pause_cb_t pause_callback; 
   
-
+// Callback for when nothing is selected from the menu  
+static nothing_selected_cb_t nothing_selected_callback; 
+  
 
 // Menu callbacks for task items.  Menu structure is:
 //  /1    Recent
@@ -150,8 +152,12 @@ static char *task_cb_item_text(char *name) {
 // Expect item names like /1 & /3/4
 static void task_cb_select(char *result) {
   APP_LOG(APP_LOG_LEVEL_DEBUG, "task_cb_select");
-  // Display the selected menu item in the text layer
-  // text_layer_set_text(text_layer, result);
+
+  // If result is NULL, nothing was selected
+  if (result == NULL) {
+    nothing_selected_callback();
+    return;
+  }
   
   uint8_t task_id = 0;
   
@@ -188,9 +194,10 @@ static void task_cb_select(char *result) {
   } 
 }
 
-void show_task_menu(new_task_cb_t task_cb, pause_cb_t pause_cb) {
+void show_task_menu(new_task_cb_t task_cb, pause_cb_t pause_cb, nothing_selected_cb_t nothing_selected_cb) {
   task_callback = task_cb;
   pause_callback = pause_cb;
+  nothing_selected_callback = nothing_selected_cb;
 
   show_menunest(task_cb_select,
                 task_cb_num_items,

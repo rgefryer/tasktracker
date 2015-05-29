@@ -3,6 +3,10 @@
 #include "mainmenu.h"
 #include "data.h"
 
+// Flag that the menu is open.  We don't update the
+// data with the latest time while this is true.
+bool g_menu_open = false;  
+  
 // BEGIN AUTO-GENERATED UI CODE; DO NOT MODIFY
 static Window *s_window;
 static GFont s_res_bitham_42_medium_numbers;
@@ -122,6 +126,7 @@ void new_task_cb(uint8_t task_id)
   
   // Tell the data layer that we are starting a new task
   start_new_task(task_id);
+  g_menu_open = false;
 }
 
 // Callback when a "Pause"
@@ -134,12 +139,18 @@ void pause_cb()
   pause_tracking();
 }
 
-
+// Callback when nothing selected
+void nothing_selected_cb()
+{
+  // Update the display of the current task
+  g_menu_open = false;
+}
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
   APP_LOG(APP_LOG_LEVEL_DEBUG, "select_click_handler");
   //text_layer_set_text(text_layer, "Select");
-  show_task_menu(new_task_cb, pause_cb);
+  g_menu_open = true;
+  show_task_menu(new_task_cb, pause_cb, nothing_selected_cb);
 }
 
 static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
@@ -173,6 +184,7 @@ void format_duration(time_t duration, char* buffer, bool secs) {
 
 
 static void update_time() {
+  
   // Get a tm structure
   time_t temp = time(NULL); 
   update_tracked_time(temp);
@@ -212,7 +224,9 @@ static void update_time() {
 }
 
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
-  update_time();
+  
+  if (!g_menu_open)
+    update_time();
 }
 
 void show_main(void) {

@@ -85,7 +85,7 @@ static void initialise_ui(void) {
   window_set_fullscreen(s_window, false);
 
   // s_menulayer_1
-  s_menulayer_1 = menu_layer_create(GRect(1, 21, 144, 146));
+  s_menulayer_1 = menu_layer_create(GRect(1, 21, 144, 120));
   menu_layer_set_click_config_onto_window(s_menulayer_1, s_window);
   layer_add_child(window_get_root_layer(s_window), (Layer *)s_menulayer_1);
 
@@ -164,6 +164,10 @@ static void handle_window_unload(Window* window) {
   if (s_selected && s_window) {
     hide_menunest();
   }
+  else if (s_menu_stack_pos) {
+    // Nothing selected, and backing out of the menus.  Inform the caller.
+    select_callback(NULL);
+  }
 }
 
 uint16_t menu_get_num_sections_callback(MenuLayer *me, void *data) {
@@ -226,7 +230,6 @@ void menu_select_click_callback(MenuLayer *menu_layer, MenuIndex *cell_index, vo
     hide_menunest();
     select_callback(item_id);
   }
-
 }
 
 void start_submenu() {
