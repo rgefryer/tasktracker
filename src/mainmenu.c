@@ -3,14 +3,14 @@
 #include <data.h>
 #include <mainmenu.h>
 
-// Callback for when a task is selected from the menu  
-static new_task_cb_t task_callback; 
+// Callback for when a task is selected from the menu
+static new_task_cb_t task_callback;
 
-// Callback for when pause is selected from the menu  
-static pause_cb_t pause_callback; 
-  
-// Callback for when nothing is selected from the menu  
-static nothing_selected_cb_t nothing_selected_callback; 
+// Callback for when pause is selected from the menu
+static pause_cb_t pause_callback;
+
+// Callback for when nothing is selected from the menu
+static nothing_selected_cb_t nothing_selected_callback;
 
 // Flag that we are currently paused
 bool g_menu_paused;
@@ -103,7 +103,7 @@ static char *task_cb_item_text(char *name) {
     if (parts[0] != 1) {
       uint8_t *labels = ordered_labels();
       label_id = labels[parts[0]-2];
-      APP_LOG(APP_LOG_LEVEL_DEBUG, "task_cb_item_text: Translate menu %d to label ID %d", parts[0], label_id);      
+      APP_LOG(APP_LOG_LEVEL_DEBUG, "task_cb_item_text: Translate menu %d to label ID %d", parts[0], label_id);
 
       // If we're looking for a label name, set it up
       if (num_parts == 1) {
@@ -127,7 +127,7 @@ static char *task_cb_item_text(char *name) {
         }
       }
     }
-      
+
     // Get the task name from the ordered tasks
     if (rc == NULL) {
       uint8_t *tasks = ordered_tasks(label_id);
@@ -139,7 +139,7 @@ static char *task_cb_item_text(char *name) {
   if (rc == NULL) {
     rc = "Unknown";
   }
-  
+
   if (strlen(rc) >= MAX_MENU_ITEM_LEN)
   {
     APP_LOG(APP_LOG_LEVEL_DEBUG, "task_cb_item_text: dumping %s: too long", rc);
@@ -160,9 +160,9 @@ static void task_cb_select(char *result) {
     nothing_selected_callback();
     return;
   }
-  
+
   uint8_t task_id = 0;
-  
+
   // Deconstruct the menu ID
   uint8_t parts[MAX_MENU_DEPTH];
   int num_parts = menu_parts(result, parts);
@@ -188,12 +188,12 @@ static void task_cb_select(char *result) {
 
     // Get the task ID.
     uint8_t *tasks = ordered_tasks(label_id);
-    task_id = tasks[parts[1] - 1];    
+    task_id = tasks[parts[1] - 1];
   }
-  
+
   if (task_id != 0) {
     task_callback(task_id);
-  } 
+  }
 }
 
 void show_task_menu(new_task_cb_t task_cb, pause_cb_t pause_cb, nothing_selected_cb_t nothing_selected_cb, bool paused) {

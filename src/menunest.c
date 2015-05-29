@@ -82,10 +82,10 @@ static TextLayer *s_textlayer_1;
 static void initialise_ui(void) {
   s_window = window_create();
   window_set_background_color(s_window, GColorBlack);
-  window_set_fullscreen(s_window, false);
+  window_set_fullscreen(s_window, true);
 
   // s_menulayer_1
-  s_menulayer_1 = menu_layer_create(GRect(1, 21, 144, 120));
+  s_menulayer_1 = menu_layer_create(GRect(1, 20, 144, 140));
   menu_layer_set_click_config_onto_window(s_menulayer_1, s_window);
   layer_add_child(window_get_root_layer(s_window), (Layer *)s_menulayer_1);
 

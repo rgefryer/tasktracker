@@ -5,10 +5,33 @@
 
 // Flag that the menu is open.  We don't update the
 // data with the latest time while this is true.
-bool g_menu_open = false;  
-  
+bool g_menu_open = false;
+
 bool g_paused = true;
 time_t g_pause_start_time = 0;
+
+// Controlling backgound reminders
+time_t g_next_vibe_time = 0;
+#define PAUSE_VIBE_INTERVAL (5 * 60)
+#define MENU_VIBE_INTERVAL  (5 * 60)
+#define TASK_VIBE_INTERVAL  (30 * 60)
+
+void set_next_vibe(time_t time_now) {
+
+  if (time_now == 0) {
+    time_now = time(NULL);
+  }
+
+  if (g_menu_open) {
+    g_next_vibe_time = time_now + MENU_VIBE_INTERVAL;
+  }
+  else if (g_paused) {
+    g_next_vibe_time = time_now + PAUSE_VIBE_INTERVAL;
+  }
+  else {
+    g_next_vibe_time = time_now + TASK_VIBE_INTERVAL;
+  }
+}
 
 // BEGIN AUTO-GENERATED UI CODE; DO NOT MODIFY
 static Window *s_window;
@@ -30,7 +53,7 @@ static void initialise_ui(void) {
   #ifndef PBL_SDK_3
     window_set_fullscreen(s_window, true);
   #endif
-  
+
   s_res_bitham_42_medium_numbers = fonts_get_system_font(FONT_KEY_BITHAM_42_MEDIUM_NUMBERS);
   s_res_roboto_condensed_21 = fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21);
   // clockface
@@ -41,7 +64,7 @@ static void initialise_ui(void) {
   text_layer_set_text_alignment(clockface, GTextAlignmentCenter);
   text_layer_set_font(clockface, s_res_bitham_42_medium_numbers);
   layer_add_child(window_get_root_layer(s_window), (Layer *)clockface);
-  
+
   // this_task_text
   this_task_text = text_layer_create(GRect(2, 0, 140, 25));
   text_layer_set_background_color(this_task_text, GColorBlack);
@@ -49,7 +72,7 @@ static void initialise_ui(void) {
   text_layer_set_text(this_task_text, "Paused");
   text_layer_set_font(this_task_text, s_res_roboto_condensed_21);
   layer_add_child(window_get_root_layer(s_window), (Layer *)this_task_text);
-  
+
   // this_task_current
   this_task_current = text_layer_create(GRect(54, 24, 87, 25));
   text_layer_set_background_color(this_task_current, GColorBlack);
@@ -58,7 +81,7 @@ static void initialise_ui(void) {
   text_layer_set_text_alignment(this_task_current, GTextAlignmentRight);
   text_layer_set_font(this_task_current, s_res_roboto_condensed_21);
   layer_add_child(window_get_root_layer(s_window), (Layer *)this_task_current);
-  
+
   // label_text
   label_text = text_layer_create(GRect(2, 53, 140, 25));
   text_layer_set_background_color(label_text, GColorBlack);
@@ -66,7 +89,7 @@ static void initialise_ui(void) {
   text_layer_set_text(label_text, "Label");
   text_layer_set_font(label_text, s_res_roboto_condensed_21);
   layer_add_child(window_get_root_layer(s_window), (Layer *)label_text);
-  
+
   // this_task_total
   this_task_total = text_layer_create(GRect(1, 24, 51, 25));
   text_layer_set_background_color(this_task_total, GColorBlack);
@@ -74,7 +97,7 @@ static void initialise_ui(void) {
   text_layer_set_text(this_task_total, "00:00");
   text_layer_set_font(this_task_total, s_res_roboto_condensed_21);
   layer_add_child(window_get_root_layer(s_window), (Layer *)this_task_total);
-  
+
   // label_remaining
   label_remaining = text_layer_create(GRect(66, 77, 74, 25));
   text_layer_set_background_color(label_remaining, GColorBlack);
@@ -83,7 +106,7 @@ static void initialise_ui(void) {
   text_layer_set_text_alignment(label_remaining, GTextAlignmentRight);
   text_layer_set_font(label_remaining, s_res_roboto_condensed_21);
   layer_add_child(window_get_root_layer(s_window), (Layer *)label_remaining);
-  
+
   // date
   date = text_layer_create(GRect(3, 104, 139, 25));
   text_layer_set_background_color(date, GColorBlack);
@@ -91,11 +114,11 @@ static void initialise_ui(void) {
   text_layer_set_text(date, "May 27");
   text_layer_set_font(date, s_res_roboto_condensed_21);
   layer_add_child(window_get_root_layer(s_window), (Layer *)date);
-  
+
   // s_inverterlayer_3
   s_inverterlayer_3 = inverter_layer_create(GRect(2, 103, 140, 1));
   layer_add_child(window_get_root_layer(s_window), (Layer *)s_inverterlayer_3);
-  
+
   // s_inverterlayer_2
   s_inverterlayer_2 = inverter_layer_create(GRect(1, 50, 140, 1));
   layer_add_child(window_get_root_layer(s_window), (Layer *)s_inverterlayer_2);
@@ -126,7 +149,7 @@ void new_task_cb(uint8_t task_id)
   // Update the display of the current task
   char *text = task_name(task_id);
   text_layer_set_text(this_task_text, text);
-  
+
   // Normally, the start time of a task is the last
   // update to the data (when the menu was displayed).
   // However, if we are paused, we start the task now.
@@ -134,11 +157,12 @@ void new_task_cb(uint8_t task_id)
   if (g_paused) {
     start_time = time(NULL);
   }
-  
+
   // Tell the data layer that we are starting a new task
   start_new_task(task_id, start_time);
   g_paused = false;
   g_menu_open = false;
+  set_next_vibe(0);
 }
 
 // Callback when a "Pause"
@@ -146,11 +170,12 @@ void pause_cb()
 {
   // Update the display of the current task
   text_layer_set_text(this_task_text, "Paused");
-  
+
   // Track that we are paused.
   g_paused = true;
   g_pause_start_time = time(NULL);
   g_menu_open = false;
+  set_next_vibe(0);
 }
 
 // Callback when nothing selected
@@ -158,6 +183,7 @@ void nothing_selected_cb()
 {
   // Update the display of the current task
   g_menu_open = false;
+  set_next_vibe(0);
 }
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
@@ -193,21 +219,21 @@ void format_duration(time_t duration, char* buffer, bool secs) {
   if (secs)
     snprintf(buffer, 9, "%02d:%02d:%02d", hours, minutes, seconds);
   else
-    snprintf(buffer, 9, "%02d:%02d", hours, minutes);    
+    snprintf(buffer, 9, "%02d:%02d", hours, minutes);
 }
 
 
-static void update_time() {
-  
-  // Get a tm structure
-  time_t temp = time(NULL); 
+
+static void update_time(time_t time_now) {
+
+
   if (!g_paused) {
-    update_tracked_time(temp);
+    update_tracked_time(time_now);
   }
   else if (g_pause_start_time == 0) {
-    g_pause_start_time = temp;
+    g_pause_start_time = time_now;
   }
-  struct tm *tick_time = localtime(&temp);
+  struct tm *tick_time = localtime(&time_now);
 
   // Create a long-lived buffer
   static char buffer[] = "00:00";
@@ -223,21 +249,21 @@ static void update_time() {
   }
 
   strftime(buffer2, sizeof("Dec 25"), "%b %e", tick_time);
-  
+
   // Display this time on the TextLayer
   text_layer_set_text(clockface, buffer);
   text_layer_set_text(date, buffer2);
-  
+
   static char buffer3[] = "00:00:00";
   static char buffer4[] = "00:00:00";
   uint32_t task_time = 0;
   if (g_paused) {
     // We don't maintain a total time paused value.
     buffer3[0] = '\0';
-    
+
     // Update the time spent on the current task today.
     if (g_pause_start_time != 0) {
-      task_time = temp - g_pause_start_time;
+      task_time = time_now - g_pause_start_time;
     }
     format_duration(task_time, buffer4, true);
   }
@@ -252,29 +278,42 @@ static void update_time() {
     format_duration(task_time, buffer4, true);
   }
   text_layer_set_text(this_task_total, buffer3);
-  text_layer_set_text(this_task_current, buffer4);    
-  
+  text_layer_set_text(this_task_current, buffer4);
+
 }
 
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
-  
+
+  // Get a tm structure
+  time_t time_now = time(NULL);
+
+  // Check for the need to BUZZ
+  if (time_now >= g_next_vibe_time) {
+    if (g_next_vibe_time != 0) {
+      // Buzz
+      vibes_short_pulse();
+    }
+
+    set_next_vibe(time_now);
+  }
+
   if (!g_menu_open)
-    update_time();
+    update_time(time_now);
 }
 
 void show_main(void) {
   initialise_ui();
-  window_set_click_config_provider(s_window, click_config_provider); 
+  window_set_click_config_provider(s_window, click_config_provider);
   window_set_window_handlers(s_window, (WindowHandlers) {
     .unload = handle_window_unload,
   });
   window_stack_push(s_window, true);
-  
+
   // Register with TickTimerService
-  tick_timer_service_subscribe(SECOND_UNIT, tick_handler);  
-  
+  tick_timer_service_subscribe(SECOND_UNIT, tick_handler);
+
   // Make sure the time is displayed from the start
-  update_time();  
+  update_time();
 }
 
 void hide_main(void) {
