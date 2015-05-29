@@ -23,8 +23,6 @@ struct Goal g_goals[NUM_GOALS+1];
 uint8_t next_task_record = 0;
 uint8_t num_task_records = 0;
 
-bool g_paused = true;
-
 struct TaskRecord g_task_records[NUM_TASK_RECORDS];
 // 6000 is an array of the s_tasks; subsequent IDs have start/spent for
 // each task.  First written is the oldest task.
@@ -453,12 +451,16 @@ uint8_t curr_record_index() {
 
 
 // Trigger the startup of a new task
-void start_new_task(uint8_t id) {
+void start_new_task(uint8_t id, time_t start_time) {
   
   // @@@ Update the list of recently used tasks
 
-  // Ensure we're not paused
-  g_paused = false;
+  // If a start_time is specified, we have been paused.
+  // Update the current time, but don't track against
+  // the task that has just completed.
+  if (start_time != 0) {
+    g_latest_time = start_time;
+  }
   
   // Initialise a new task record
   g_task_records[next_task_record].start_time = g_latest_time;
@@ -492,27 +494,15 @@ uint32_t time_in_current_task() {
     return 0;
 }
 
-// Return the ID of the current task, or 0 if paused.
+// Return the ID of the current task
 uint8_t current_task_id() {
-  if (g_paused)
-    return 0;
-  else
-    return g_task_records[curr_record_index()].task;
+  return g_task_records[curr_record_index()].task;
 }
   
-void pause_tracking() {
-  g_paused = true;
-}
-
-// Is tracking paused?
-bool tracking_paused() {
-  return g_paused;
-}
-
 // Receive the latest time from the UI code.
 void update_tracked_time(time_t time_now) {
 
-  if (g_paused || (g_latest_time == 0)) {
+  if (g_latest_time == 0) {
     g_latest_time = time_now;
     return;
   }

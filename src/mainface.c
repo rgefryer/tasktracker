@@ -7,6 +7,9 @@
 // data with the latest time while this is true.
 bool g_menu_open = false;  
   
+bool g_paused = true;
+time_t g_pause_start_time = 0;
+
 // BEGIN AUTO-GENERATED UI CODE; DO NOT MODIFY
 static Window *s_window;
 static GFont s_res_bitham_42_medium_numbers;
@@ -124,8 +127,17 @@ void new_task_cb(uint8_t task_id)
   char *text = task_name(task_id);
   text_layer_set_text(this_task_text, text);
   
+  // Normally, the start time of a task is the last
+  // update to the data (when the menu was displayed).
+  // However, if we are paused, we start the task now.
+  time_t start_time = 0;
+  if (g_paused) {
+    start_time = time(NULL);
+  }
+  
   // Tell the data layer that we are starting a new task
-  start_new_task(task_id);
+  start_new_task(task_id, start_time);
+  g_paused = false;
   g_menu_open = false;
 }
 
@@ -135,8 +147,10 @@ void pause_cb()
   // Update the display of the current task
   text_layer_set_text(this_task_text, "Paused");
   
-  // Tell the data layer that we are pausing
-  pause_tracking();
+  // Track that we are paused.
+  g_paused = true;
+  g_pause_start_time = time(NULL);
+  g_menu_open = false;
 }
 
 // Callback when nothing selected
@@ -150,7 +164,7 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
   APP_LOG(APP_LOG_LEVEL_DEBUG, "select_click_handler");
   //text_layer_set_text(text_layer, "Select");
   g_menu_open = true;
-  show_task_menu(new_task_cb, pause_cb, nothing_selected_cb);
+  show_task_menu(new_task_cb, pause_cb, nothing_selected_cb, g_paused);
 }
 
 static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
@@ -187,7 +201,12 @@ static void update_time() {
   
   // Get a tm structure
   time_t temp = time(NULL); 
-  update_tracked_time(temp);
+  if (!g_paused) {
+    update_tracked_time(temp);
+  }
+  else if (g_pause_start_time == 0) {
+    g_pause_start_time = temp;
+  }
   struct tm *tick_time = localtime(&temp);
 
   // Create a long-lived buffer
@@ -209,18 +228,32 @@ static void update_time() {
   text_layer_set_text(clockface, buffer);
   text_layer_set_text(date, buffer2);
   
-  // Update the time spent on the current task today.
   static char buffer3[] = "00:00:00";
-  uint8_t task_id = current_task_id();
-  uint32_t task_time = time_in_task_today(task_id);
-  format_duration(task_time, buffer3, false);
-  text_layer_set_text(this_task_total, buffer3);
-  
-  // Update the time spent on the current task today.
   static char buffer4[] = "00:00:00";
-  task_time = time_in_current_task();
-  format_duration(task_time, buffer4, true);
-  text_layer_set_text(this_task_current, buffer4);
+  uint32_t task_time = 0;
+  if (g_paused) {
+    // We don't maintain a total time paused value.
+    buffer3[0] = '\0';
+    
+    // Update the time spent on the current task today.
+    if (g_pause_start_time != 0) {
+      task_time = temp - g_pause_start_time;
+    }
+    format_duration(task_time, buffer4, true);
+  }
+  else {
+    // Update the time spent on the current task today.
+    uint8_t task_id = current_task_id();
+    task_time = time_in_task_today(task_id);
+    format_duration(task_time, buffer3, false);
+
+    // Update the time spent on the current task right now.
+    task_time = time_in_current_task();
+    format_duration(task_time, buffer4, true);
+  }
+  text_layer_set_text(this_task_total, buffer3);
+  text_layer_set_text(this_task_current, buffer4);    
+  
 }
 
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {

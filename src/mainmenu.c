@@ -11,7 +11,9 @@ static pause_cb_t pause_callback;
   
 // Callback for when nothing is selected from the menu  
 static nothing_selected_cb_t nothing_selected_callback; 
-  
+
+// Flag that we are currently paused
+bool g_menu_paused;
 
 // Menu callbacks for task items.  Menu structure is:
 //  /1    Recent
@@ -55,7 +57,7 @@ static uint16_t task_cb_num_items(char *name) {
 
     uint8_t *tasks = ordered_tasks(0);
     int task_count = num_ids(tasks);
-    if (!tracking_paused()) {
+    if (!g_menu_paused) {
       task_count++;  // Add 1 for "Pause"
     }
     if (task_count < MAX_RECENT_TASKS)
@@ -112,7 +114,7 @@ static char *task_cb_item_text(char *name) {
 
     // Handle the "Pause" at the top of the Recents menu
     uint8_t task_ix = parts[1] - 1; // Because menu-IDs are 1-based
-    if (!tracking_paused() && (rc == NULL)) {
+    if (!g_menu_paused && (rc == NULL)) {
       APP_LOG(APP_LOG_LEVEL_DEBUG, "task_cb_item_text: Get task name");
       if (parts[0] == 1)
       {
@@ -176,7 +178,7 @@ static void task_cb_select(char *result) {
     }
 
     // Special case entry 1 in the recents menu, which is pause
-    if (!tracking_paused() && (parts[0] == 1)) {
+    if (!g_menu_paused && (parts[0] == 1)) {
       if (parts[1] == 1) {
         pause_callback();
         return;
@@ -194,10 +196,11 @@ static void task_cb_select(char *result) {
   } 
 }
 
-void show_task_menu(new_task_cb_t task_cb, pause_cb_t pause_cb, nothing_selected_cb_t nothing_selected_cb) {
+void show_task_menu(new_task_cb_t task_cb, pause_cb_t pause_cb, nothing_selected_cb_t nothing_selected_cb, bool paused) {
   task_callback = task_cb;
   pause_callback = pause_cb;
   nothing_selected_callback = nothing_selected_cb;
+  g_menu_paused = paused;
 
   show_menunest(task_cb_select,
                 task_cb_num_items,

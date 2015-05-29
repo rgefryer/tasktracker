@@ -58,7 +58,7 @@ char *label_name(uint8_t id);
 char *task_name(uint8_t id);
 
 // Trigger the startup of a new task
-void start_new_task(uint8_t id);
+void start_new_task(uint8_t id, time_t start_time);
 
 // Return the number of seconds spent on a task, today
 uint32_t time_in_task_today(uint8_t id);
@@ -71,9 +71,3 @@ uint8_t current_task_id();
 
 // Pass the latest time to the tracking data
 void update_tracked_time(time_t time_now);
-
-// Go into pause mode
-void pause_tracking();
-
-// Is tracking paused?
-bool tracking_paused();
